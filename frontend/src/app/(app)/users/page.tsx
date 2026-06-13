@@ -57,12 +57,12 @@ export default function UsersPage() {
               
               <select className="flex h-9 w-full rounded border border-[var(--border)] bg-[var(--surface)] px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)]" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
                 <option value="ADMIN">Admin</option>
-                <option value="SALES_MANAGER">Sales Manager</option>
-                <option value="SALES_EXECUTIVE">Sales Executive</option>
-                <option value="PURCHASE_MANAGER">Purchase Manager</option>
-                <option value="WAREHOUSE_MANAGER">Warehouse Manager</option>
-                <option value="PRODUCTION_MANAGER">Production Manager</option>
                 <option value="VIEWER">Viewer</option>
+                <option value="SALES">Sales</option>
+                <option value="PRODUCT">Product</option>
+                <option value="MANUFACTURING">Manufacturing</option>
+                <option value="INTELLIGENCE">Intelligence</option>
+                <option value="INVENTORY">Inventory</option>
               </select>
               
               <Input placeholder="Department" value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} />
