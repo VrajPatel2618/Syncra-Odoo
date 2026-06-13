@@ -10,6 +10,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/lib/stores";
+import { canWrite } from "@/lib/permissions";
 
 const mockSales = [
   { id: "1", orderNumber: "SO-DEMO001", customer: { name: "Modern Homes Pvt Ltd" }, status: "CONFIRMED", totalAmount: 106198, orderDate: new Date().toISOString(), deliveryDate: new Date(Date.now() + 7*86400000).toISOString() },
@@ -25,6 +27,8 @@ const columns = [
 
 export default function SalesPage() {
   const queryClient = useQueryClient();
+  const user = useAuthStore((s) => s.user);
+  const hasWriteAccess = canWrite(user?.role, "sales");
   const [showModal, setShowModal] = useState(false);
   const [customerId, setCustomerId] = useState("");
   const [productId, setProductId] = useState("");
@@ -73,7 +77,7 @@ export default function SalesPage() {
         title="Sales Management" 
         description="Order lifecycle: Draft → Confirmed → Delivered" 
         icon={ShoppingCart} 
-        action={{ label: "+ New Order", onClick: () => setShowModal(true) }} 
+        action={hasWriteAccess ? { label: "New Sale", icon: <ShoppingCart className="h-4 w-4" />, onClick: () => setShowModal(true) } : undefined}
       />
 
       {showModal && (
@@ -144,8 +148,7 @@ export default function SalesPage() {
         { key: "status", header: "Status", render: (o: any) => <StatusBadge status={o.status as string} /> },
         { key: "totalAmount", header: "Total", render: (o: any) => formatCurrency(o.totalAmount as number) },
         { key: "orderDate", header: "Date", render: (o: any) => formatDate(o.orderDate as string) },
-
-        { key: "actions", header: "Actions", render: (o: any) => {
+        ...(hasWriteAccess ? [{ key: "actions", header: "Actions", render: (o: any) => {
           const handleAction = (promise: Promise<any>, successMsg: string) => {
             toast.promise(promise, {
               loading: 'Processing...',
@@ -172,7 +175,7 @@ export default function SalesPage() {
               )}
             </div>
           );
-        }},
+        }}] : []),
       ]} />
     </div>
   );

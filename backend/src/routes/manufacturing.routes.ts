@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import prisma from '../lib/prisma';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
-import { authenticate, authorize, AuthRequest } from '../middleware/auth';
+import { authenticate, authorize, AuthRequest, requireModuleAccess } from '../middleware/auth';
 import { inventoryService } from '../services/inventory.service';
 import { blockchainService } from '../services/blockchain.service';
 
 const router = Router();
 const genNumber = (prefix: string) => `${prefix}-${Date.now().toString(36).toUpperCase()}`;
 
-router.get('/orders', authenticate, asyncHandler(async (_req, res) => {
+router.get('/orders', authenticate, requireModuleAccess('manufacturing'), asyncHandler(async (_req, res) => {
   const orders = await prisma.manufacturingOrder.findMany({
     include: {
       bom: { include: { finishedProduct: true, components: { include: { product: true } } } },
@@ -20,12 +20,12 @@ router.get('/orders', authenticate, asyncHandler(async (_req, res) => {
   res.json({ success: true, data: orders });
 }));
 
-router.get('/work-centers', authenticate, asyncHandler(async (_req, res) => {
+router.get('/work-centers', authenticate, requireModuleAccess('manufacturing'), asyncHandler(async (_req, res) => {
   const centers = await prisma.workCenter.findMany({ include: { _count: { select: { workOrders: true } } } });
   res.json({ success: true, data: centers });
 }));
 
-router.get('/boms', authenticate, asyncHandler(async (_req, res) => {
+router.get('/boms', authenticate, requireModuleAccess('manufacturing'), asyncHandler(async (_req, res) => {
   const boms = await prisma.billOfMaterial.findMany({
     include: {
       finishedProduct: true,
@@ -36,7 +36,7 @@ router.get('/boms', authenticate, asyncHandler(async (_req, res) => {
   res.json({ success: true, data: boms });
 }));
 
-router.post('/orders', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'MANUFACTURING'), asyncHandler(async (req, res) => {
+router.post('/orders', authenticate, requireModuleAccess('manufacturing', true), asyncHandler(async (req, res) => {
   const { bomId, quantity, workCenterId, scheduledDate } = req.body;
   const order = await prisma.manufacturingOrder.create({
     data: {
@@ -52,7 +52,7 @@ router.post('/orders', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MANAGER'
   res.status(201).json({ success: true, data: order });
 }));
 
-router.patch('/orders/:id/start', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'MANUFACTURING'), asyncHandler(async (req: AuthRequest, res) => {
+router.patch('/orders/:id/start', authenticate, requireModuleAccess('manufacturing', true), asyncHandler(async (req: AuthRequest, res) => {
   const order = await prisma.manufacturingOrder.findUnique({
     where: { id: req.params.id as string },
     include: { bom: { include: { components: true, operations: { include: { workCenter: true } } } } },
@@ -97,7 +97,7 @@ router.patch('/orders/:id/start', authenticate, authorize('SUPER_ADMIN', 'ADMIN'
   res.json({ success: true, data: updated });
 }));
 
-router.patch('/orders/:id/complete', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'MANUFACTURING'), asyncHandler(async (req: AuthRequest, res) => {
+router.patch('/orders/:id/complete', authenticate, requireModuleAccess('manufacturing', true), asyncHandler(async (req: AuthRequest, res) => {
   const order = await prisma.manufacturingOrder.findUnique({
     where: { id: req.params.id as string },
     include: { bom: { include: { components: true, finishedProduct: true } } },

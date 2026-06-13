@@ -1,31 +1,40 @@
 import { Router } from 'express';
 import prisma from '../lib/prisma';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
-import { authenticate, authorize, AuthRequest } from '../middleware/auth';
+import { authenticate, authorize, AuthRequest, requireModuleAccess } from '../middleware/auth';
+import { getAccessLevel } from '../lib/permissions';
 import { inventoryService } from '../services/inventory.service';
 import { blockchainService } from '../services/blockchain.service';
 
 const router = Router();
 const genNumber = (prefix: string) => `${prefix}-${Date.now().toString(36).toUpperCase()}`;
 
-router.get('/', authenticate, asyncHandler(async (_req, res) => {
+router.get('/', authenticate, requireModuleAccess('sales'), asyncHandler(async (req: AuthRequest, res) => {
+  const level = getAccessLevel(req.user!.role, 'sales');
+  const where = level === 'own' ? { createdById: req.user!.id } : {};
+  
   const orders = await prisma.salesOrder.findMany({
+    where,
     include: { customer: true, items: { include: { product: true } }, deliveries: true },
     orderBy: { createdAt: 'desc' },
   });
   res.json({ success: true, data: orders.map(o => ({ ...o, subtotal: Number(o.subtotal), taxAmount: Number(o.taxAmount), totalAmount: Number(o.totalAmount) })) });
 }));
 
-router.get('/:id', authenticate, asyncHandler(async (req, res) => {
+router.get('/:id', authenticate, requireModuleAccess('sales'), asyncHandler(async (req: AuthRequest, res) => {
+  const level = getAccessLevel(req.user!.role, 'sales');
+  const where: any = { id: req.params.id as string };
+  if (level === 'own') where.createdById = req.user!.id;
+
   const order = await prisma.salesOrder.findUnique({
-    where: { id: req.params.id as string },
+    where,
     include: { customer: true, items: { include: { product: true } }, deliveries: true, invoices: true, payments: true },
   });
-  if (!order) throw new AppError('Order not found', 404);
+  if (!order) throw new AppError('Order not found or access denied', 404);
   res.json({ success: true, data: order });
 }));
 
-router.post('/', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'), asyncHandler(async (req: AuthRequest, res) => {
+router.post('/', authenticate, requireModuleAccess('sales', true), asyncHandler(async (req: AuthRequest, res) => {
   const { customerId, items, deliveryDate, notes } = req.body;
   let subtotal = 0;
   const orderItems = items.map((item: { productId: string; quantity: number; unitPrice: number }) => {
@@ -43,6 +52,7 @@ router.post('/', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SAL
       subtotal,
       taxAmount,
       totalAmount: subtotal + taxAmount,
+      createdById: req.user!.id,
       items: { create: orderItems },
     },
     include: { customer: true, items: { include: { product: true } } },
@@ -50,7 +60,7 @@ router.post('/', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SAL
   res.status(201).json({ success: true, data: order });
 }));
 
-router.patch('/:id/confirm', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'), asyncHandler(async (req: AuthRequest, res) => {
+router.patch('/:id/confirm', authenticate, requireModuleAccess('sales', true), asyncHandler(async (req: AuthRequest, res) => {
   const order = await prisma.salesOrder.findUnique({
     where: { id: req.params.id as string },
     include: { items: { include: { product: true } } },
@@ -101,7 +111,7 @@ router.patch('/:id/confirm', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MA
   res.json({ success: true, data: updated });
 }));
 
-router.patch('/:id/deliver', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'WAREHOUSE'), asyncHandler(async (req: AuthRequest, res) => {
+router.patch('/:id/deliver', authenticate, requireModuleAccess('sales', true), asyncHandler(async (req: AuthRequest, res) => {
   const order = await prisma.salesOrder.findUnique({
     where: { id: req.params.id as string },
     include: { items: true },
@@ -159,7 +169,7 @@ router.patch('/:id/deliver', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MA
   res.json({ success: true, data: updated });
 }));
 
-router.post('/:id/invoice', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'), asyncHandler(async (req: AuthRequest, res) => {
+router.post('/:id/invoice', authenticate, requireModuleAccess('sales', true), asyncHandler(async (req: AuthRequest, res) => {
   const order = await prisma.salesOrder.findUnique({ where: { id: req.params.id as string } });
   if (!order) throw new AppError('Order not found', 404);
   
@@ -181,7 +191,7 @@ router.post('/:id/invoice', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MAN
   res.json({ success: true, data: invoice });
 }));
 
-router.post('/:id/pay', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'), asyncHandler(async (req: AuthRequest, res) => {
+router.post('/:id/pay', authenticate, requireModuleAccess('sales', true), asyncHandler(async (req: AuthRequest, res) => {
   const order = await prisma.salesOrder.findUnique({ where: { id: req.params.id as string } });
   if (!order) throw new AppError('Order not found', 404);
   
