@@ -144,7 +144,7 @@ export default function SalesPage() {
         { key: "status", header: "Status", render: (o: any) => <StatusBadge status={o.status as string} /> },
         { key: "totalAmount", header: "Total", render: (o: any) => formatCurrency(o.totalAmount as number) },
         { key: "orderDate", header: "Date", render: (o: any) => formatDate(o.orderDate as string) },
-        { key: "deliveryDate", header: "Delivery", render: (o: any) => o.deliveryDate ? formatDate(o.deliveryDate as string) : "—" },
+
         { key: "actions", header: "Actions", render: (o: any) => {
           const handleAction = (promise: Promise<any>, successMsg: string) => {
             toast.promise(promise, {
