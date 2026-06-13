@@ -57,6 +57,21 @@ router.post('/users', auth_1.authenticate, (0, auth_1.authorize)('SUPER_ADMIN', 
     const { password: _, ...userWithoutPassword } = user;
     res.json({ success: true, data: userWithoutPassword });
 }));
+router.put('/users/:id', auth_1.authenticate, (0, auth_1.authorize)('SUPER_ADMIN', 'ADMIN'), (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const { id } = req.params;
+    const { email, password, firstName, lastName, role, department, panels } = req.body;
+    const updateData = { email, firstName, lastName, role, department, panels: panels ? JSON.stringify(panels) : null };
+    if (password) {
+        const bcrypt = require('bcryptjs');
+        updateData.password = await bcrypt.hash(password, 12);
+    }
+    const user = await prisma_1.default.user.update({
+        where: { id: id },
+        data: updateData,
+    });
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({ success: true, data: userWithoutPassword });
+}));
 router.delete('/users/:id', auth_1.authenticate, (0, auth_1.authorize)('SUPER_ADMIN', 'ADMIN'), (0, errorHandler_1.asyncHandler)(async (req, res) => {
     await prisma_1.default.user.delete({
         where: { id: req.params.id }

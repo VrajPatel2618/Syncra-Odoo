@@ -100,6 +100,7 @@ export const systemApi = {
   payments: () => api.get("/payments"),
   users: () => api.get("/users"),
   createUser: (data: any) => api.post("/users", data),
+  updateUser: (id: string, data: any) => api.put(`/users/${id}`, data),
   deleteUser: (id: string) => api.delete(`/users/${id}`),
   markNotificationRead: (id: string) => api.patch(`/system/notifications/${id}/read`),
   procurementRules: () => api.get("/procurement/rules"),

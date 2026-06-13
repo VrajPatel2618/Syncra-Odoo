@@ -8,11 +8,12 @@ import { systemApi } from "@/lib/api";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { UserCog, Trash2 } from "lucide-react";
+import { UserCog, Trash2, Edit2 } from "lucide-react";
 
 export default function UsersPage() {
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ firstName: "", lastName: "", email: "", role: "VIEWER", password: "", panels: [] as string[] });
 
   const { data, isLoading } = useQuery({ queryKey: ["users"], queryFn: () => systemApi.users().then(r => r.data.data).catch(() => [
@@ -30,6 +31,18 @@ export default function UsersPage() {
     onError: (err: any) => toast.error(err?.response?.data?.message || "Failed to create user")
   });
 
+  const updateUser = useMutation({
+    mutationFn: () => systemApi.updateUser(editingUserId!, formData),
+    onSuccess: () => {
+      toast.success("User updated successfully");
+      setShowModal(false);
+      setEditingUserId(null);
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      setFormData({ firstName: "", lastName: "", email: "", role: "VIEWER", password: "", panels: [] });
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || "Failed to update user")
+  });
+
   const deleteUser = useMutation({
     mutationFn: (id: string) => systemApi.deleteUser(id),
     onSuccess: () => {
@@ -41,12 +54,24 @@ export default function UsersPage() {
 
   return (
     <div>
-      <PageHeader title="User Management" description="User accounts, roles, and access control" icon={UserCog} action={{ label: "+ Add User", onClick: () => setShowModal(true) }} />
+      <PageHeader 
+        title="User Management" 
+        description="User accounts, roles, and access control" 
+        icon={UserCog} 
+        action={{ 
+          label: "+ Add User", 
+          onClick: () => {
+            setEditingUserId(null);
+            setFormData({ firstName: "", lastName: "", email: "", role: "VIEWER", password: "", panels: [] });
+            setShowModal(true);
+          } 
+        }} 
+      />
       
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-[var(--surface)] p-6 rounded-lg w-full max-w-md border border-[var(--border)]">
-            <h2 className="text-lg font-bold mb-4">Add New User</h2>
+            <h2 className="text-lg font-bold mb-4">{editingUserId ? "Edit User" : "Add New User"}</h2>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <Input placeholder="First Name" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
@@ -88,30 +113,51 @@ export default function UsersPage() {
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-[var(--border)]">
-              <Button variant="outline" onClick={() => setShowModal(false)}>Cancel</Button>
-              <Button onClick={() => createUser.mutate()} disabled={createUser.isPending || !formData.email || !formData.firstName}>
-                {createUser.isPending ? "Saving..." : "Save User"}
+              <Button variant="outline" onClick={() => { setShowModal(false); setEditingUserId(null); }}>Cancel</Button>
+              <Button 
+                onClick={() => editingUserId ? updateUser.mutate() : createUser.mutate()} 
+                disabled={createUser.isPending || updateUser.isPending || !formData.email || !formData.firstName}
+              >
+                {createUser.isPending || updateUser.isPending ? "Saving..." : (editingUserId ? "Update User" : "Save User")}
               </Button>
             </div>
           </div>
         </div>
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {(data||[]).map((u: {id:string; firstName:string; lastName:string; email:string; role:string; isActive?:boolean}) => (
+        {(data||[]).map((u: {id:string; firstName:string; lastName:string; email:string; role:string; panels?:any; isActive?:boolean}) => (
           <Card key={u.email} className="p-6 relative group"><CardContent className="p-0">
-            <Button 
-              variant="destructive" 
-              size="icon" 
-              className="absolute top-4 right-4 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => {
-                if (window.confirm("Are you sure you want to delete this user?")) {
-                  deleteUser.mutate(u.id);
-                }
-              }}
-              disabled={deleteUser.isPending}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-8 w-8 text-[var(--muted)] hover:text-[var(--primary)]"
+                onClick={() => {
+                  let parsedPanels = [];
+                  if (u.panels) {
+                    try { parsedPanels = typeof u.panels === 'string' ? JSON.parse(u.panels) : u.panels; } catch(e) {}
+                  }
+                  setFormData({ firstName: u.firstName, lastName: u.lastName, email: u.email, role: u.role, password: "", panels: Array.isArray(parsedPanels) ? parsedPanels : [] });
+                  setEditingUserId(u.id);
+                  setShowModal(true);
+                }}
+              >
+                <Edit2 className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="destructive" 
+                size="icon" 
+                className="h-8 w-8"
+                onClick={() => {
+                  if (window.confirm("Are you sure you want to delete this user?")) {
+                    deleteUser.mutate(u.id);
+                  }
+                }}
+                disabled={deleteUser.isPending}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
             <div className="flex items-center gap-4 mb-4">
               <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold">{u.firstName[0]}{u.lastName[0]}</div>
               <div><p className="font-semibold">{u.firstName} {u.lastName}</p><p className="text-xs text-muted">{u.email}</p></div>
