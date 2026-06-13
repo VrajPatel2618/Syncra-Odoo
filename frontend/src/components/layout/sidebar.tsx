@@ -43,7 +43,7 @@ export function Sidebar() {
       <nav className="flex-1 overflow-y-auto scrollbar-thin py-2">
         {navigationGroups.map((group) => {
           const visibleItems = group.items.filter(item => 
-            !item.moduleId || hasModuleAccess(user?.role, item.moduleId as ModuleType)
+            !item.moduleId || hasModuleAccess(user?.role, item.moduleId as ModuleType, user?.panels)
           );
           if (visibleItems.length === 0) return null;
 

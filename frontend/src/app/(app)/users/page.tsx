@@ -12,7 +12,7 @@ import { UserCog, Trash2 } from "lucide-react";
 export default function UsersPage() {
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ firstName: "", lastName: "", email: "", role: "VIEWER", department: "Audit", password: "" });
+  const [formData, setFormData] = useState({ firstName: "", lastName: "", email: "", role: "VIEWER", department: "Audit", password: "", panels: [] as string[] });
 
   const { data, isLoading } = useQuery({ queryKey: ["users"], queryFn: () => systemApi.users().then(r => r.data.data).catch(() => [
     { firstName: "Rajesh", lastName: "Sharma", email: "admin@universal.com", role: "ADMIN", isActive: true, lastLogin: new Date().toISOString() },
@@ -24,7 +24,7 @@ export default function UsersPage() {
       toast.success("User created successfully");
       setShowModal(false);
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      setFormData({ firstName: "", lastName: "", email: "", role: "VIEWER", department: "Audit", password: "" });
+      setFormData({ firstName: "", lastName: "", email: "", role: "VIEWER", department: "Audit", password: "", panels: [] });
     },
     onError: (err: any) => toast.error(err?.response?.data?.message || "Failed to create user")
   });
@@ -63,6 +63,27 @@ export default function UsersPage() {
                 <option value="VIEWER">Viewer</option>
               </select>
               <input className="w-full bg-[var(--background)] border border-[var(--border)] rounded px-3 py-2 text-sm" placeholder="Department" value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} />
+              <div className="mt-2 border-t border-[var(--border)] pt-2">
+                <p className="text-xs font-semibold mb-2">Custom Panel Access (Overrides Role Base):</p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {['dashboard', 'inventory', 'sales', 'purchase', 'manufacturing', 'audit_log', 'user_management', 'blockchain'].map(panel => (
+                    <label key={panel} className="flex items-center gap-1.5 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={formData.panels.includes(panel)}
+                        onChange={e => {
+                          const newPanels = e.target.checked 
+                            ? [...formData.panels, panel]
+                            : formData.panels.filter(p => p !== panel);
+                          setFormData({ ...formData, panels: newPanels });
+                        }}
+                        className="rounded accent-[var(--primary)]"
+                      />
+                      <span className="capitalize">{panel.replace(/_/g, " ")}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
               <Button variant="outline" onClick={() => setShowModal(false)}>Cancel</Button>

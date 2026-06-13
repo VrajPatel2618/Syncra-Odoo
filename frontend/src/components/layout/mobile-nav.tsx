@@ -22,7 +22,7 @@ export function MobileNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-[var(--border)] bg-[var(--surface)]">
       <div className="flex justify-around py-1.5">
-        {items.filter(item => hasModuleAccess(user?.role, item.module)).map((item) => {
+        {items.filter(item => hasModuleAccess(user?.role, item.module, user?.panels)).map((item) => {
           const active = pathname === item.href;
           return (
             <Link

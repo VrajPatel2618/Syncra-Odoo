@@ -70,7 +70,7 @@ router.get(
   asyncHandler(async (req: AuthRequest, res) => {
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
-      select: { id: true, email: true, firstName: true, lastName: true, role: true, avatar: true, phone: true, lastLogin: true },
+      select: { id: true, email: true, firstName: true, lastName: true, role: true, avatar: true, phone: true, lastLogin: true, panels: true },
     });
     res.json({ success: true, data: user });
   })

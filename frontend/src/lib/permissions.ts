@@ -18,11 +18,23 @@ export const getAccessLevel = (role: string | undefined, module: ModuleType): Ac
   return PERMISSION_MATRIX[normalizedRole]?.[module] || 'none';
 };
 
-export const hasModuleAccess = (role: string | undefined, module: ModuleType): boolean => {
+export const hasModuleAccess = (role: string | undefined, module: ModuleType, panels?: string | string[] | null): boolean => {
+  if (panels) {
+    try {
+      const parsedPanels = typeof panels === 'string' ? JSON.parse(panels) : panels;
+      if (Array.isArray(parsedPanels) && parsedPanels.includes(module)) return true;
+    } catch(e) {}
+  }
   return getAccessLevel(role, module) !== 'none';
 };
 
-export const canWrite = (role: string | undefined, module: ModuleType): boolean => {
+export const canWrite = (role: string | undefined, module: ModuleType, panels?: string | string[] | null): boolean => {
+  if (panels) {
+    try {
+      const parsedPanels = typeof panels === 'string' ? JSON.parse(panels) : panels;
+      if (Array.isArray(parsedPanels) && parsedPanels.includes(module)) return true;
+    } catch(e) {}
+  }
   const level = getAccessLevel(role, module);
   return level === 'full' || level === 'own';
 };

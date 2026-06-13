@@ -42,17 +42,17 @@ router.get('/payments', auth_1.authenticate, (0, errorHandler_1.asyncHandler)(as
 }));
 router.get('/users', auth_1.authenticate, (0, auth_1.authorize)('SUPER_ADMIN', 'ADMIN'), (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     const users = await prisma_1.default.user.findMany({
-        select: { id: true, email: true, firstName: true, lastName: true, role: true, isActive: true, lastLogin: true, createdAt: true },
+        select: { id: true, email: true, firstName: true, lastName: true, role: true, panels: true, isActive: true, lastLogin: true, createdAt: true },
         orderBy: { createdAt: 'desc' },
     });
     res.json({ success: true, data: users });
 }));
 router.post('/users', auth_1.authenticate, (0, auth_1.authorize)('SUPER_ADMIN', 'ADMIN'), (0, errorHandler_1.asyncHandler)(async (req, res) => {
-    const { email, password, firstName, lastName, role, department } = req.body;
+    const { email, password, firstName, lastName, role, department, panels } = req.body;
     const bcrypt = require('bcryptjs');
     const hashedPassword = await bcrypt.hash(password || 'password123', 12);
     const user = await prisma_1.default.user.create({
-        data: { email, password: hashedPassword, firstName, lastName, role, department },
+        data: { email, password: hashedPassword, firstName, lastName, role, department, panels: panels ? JSON.stringify(panels) : null },
     });
     const { password: _, ...userWithoutPassword } = user;
     res.json({ success: true, data: userWithoutPassword });
