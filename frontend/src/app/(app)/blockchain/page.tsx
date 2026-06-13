@@ -19,6 +19,7 @@ export default function BlockchainPage() {
   const [stockCode, setStockCode] = useState("");
   const [stockHistory, setStockHistory] = useState<any[]>([]);
   const [stockLoading, setStockLoading] = useState(false);
+  const [stockError, setStockError] = useState("");
 
   useEffect(() => {
     fetchStats();
@@ -27,9 +28,10 @@ export default function BlockchainPage() {
   const fetchStats = async () => {
     try {
       const { data } = await api.get('/blockchain/stats');
-      setStats(data);
+      setStats(data || { enabled: false });
     } catch (e) {
       console.error(e);
+      setStats({ enabled: false });
     } finally {
       setLoading(false);
     }
@@ -52,11 +54,14 @@ export default function BlockchainPage() {
   const handleStockSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     setStockLoading(true);
+    setStockError("");
+    setStockHistory([]);
     try {
       const { data } = await api.get(`/blockchain/stock-history?productCode=${stockCode}`);
       setStockHistory(data);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      setStockError(e.response?.data?.error || "Failed to fetch. Node may be offline.");
     } finally {
       setStockLoading(false);
     }
@@ -80,11 +85,11 @@ export default function BlockchainPage() {
               <h3 className="text-2xl font-bold">{stats.totalRecords || '0'}</h3>
             </div>
           </div>
-          <div className="bg-[var(--card)] p-6 rounded-2xl shadow-sm border border-[var(--border)] flex items-center gap-4">
-            <div className="p-3 bg-[var(--primary)]/10 text-[var(--primary)] rounded-xl"><Link2 className="w-6 h-6" /></div>
+          <div className={`bg-[var(--card)] p-6 rounded-2xl shadow-sm border border-[var(--border)] flex items-center gap-4 ${!stats.enabled ? 'border-red-500/50' : ''}`}>
+            <div className={`p-3 rounded-xl ${stats.enabled ? 'bg-[var(--primary)]/10 text-[var(--primary)]' : 'bg-red-500/10 text-red-500'}`}><Link2 className="w-6 h-6" /></div>
             <div>
               <p className="text-sm font-medium text-[var(--muted)]">Network</p>
-              <h3 className="text-xl font-bold">{stats.network || 'Disabled'}</h3>
+              <h3 className={`text-xl font-bold ${!stats.enabled ? 'text-red-500' : ''}`}>{stats.network || 'Offline / Disabled'}</h3>
             </div>
           </div>
           <div className="bg-[var(--card)] p-6 rounded-2xl shadow-sm border border-[var(--border)] flex items-center gap-4">
@@ -147,7 +152,12 @@ export default function BlockchainPage() {
           </form>
 
           <div className="space-y-3">
-            {stockHistory.length === 0 && !stockLoading ? (
+            {stockError && (
+              <div className="p-4 bg-red-50 text-red-700 rounded-xl border border-red-200 flex items-center gap-2">
+                <XCircle className="w-5 h-5"/> {stockError}
+              </div>
+            )}
+            {!stockError && stockHistory.length === 0 && !stockLoading ? (
                <p className="text-[var(--muted)] text-sm text-center py-4">No on-chain stock history found.</p>
             ) : (
               stockHistory.map((h, i) => (
