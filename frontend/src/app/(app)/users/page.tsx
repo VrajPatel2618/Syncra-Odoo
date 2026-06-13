@@ -5,12 +5,14 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { systemApi } from "@/lib/api";
+import { useAuthStore } from "@/lib/stores";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { UserCog, Trash2, Edit2 } from "lucide-react";
 
 export default function UsersPage() {
+  const { user: currentUser, setAuth, token } = useAuthStore();
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
@@ -33,9 +35,15 @@ export default function UsersPage() {
 
   const updateUser = useMutation({
     mutationFn: () => systemApi.updateUser(editingUserId!, formData),
-    onSuccess: () => {
+    onSuccess: (res: any) => {
       toast.success("User updated successfully");
       setShowModal(false);
+      
+      // Update auth store if the edited user is the currently logged-in user
+      if (currentUser?.id === editingUserId && res.data?.data) {
+        setAuth(res.data.data, token!);
+      }
+      
       setEditingUserId(null);
       queryClient.invalidateQueries({ queryKey: ["users"] });
       setFormData({ firstName: "", lastName: "", email: "", role: "VIEWER", password: "", panels: [] });
