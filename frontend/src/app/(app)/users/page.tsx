@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { UserCog } from "lucide-react";
+import { UserCog, Trash2 } from "lucide-react";
 
 export default function UsersPage() {
   const queryClient = useQueryClient();
@@ -27,6 +27,15 @@ export default function UsersPage() {
       setFormData({ firstName: "", lastName: "", email: "", role: "VIEWER", department: "Audit", password: "" });
     },
     onError: (err: any) => toast.error(err?.response?.data?.message || "Failed to create user")
+  });
+
+  const deleteUser = useMutation({
+    mutationFn: (id: string) => systemApi.deleteUser(id),
+    onSuccess: () => {
+      toast.success("User deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || "Failed to delete user")
   });
 
   return (
@@ -65,8 +74,21 @@ export default function UsersPage() {
         </div>
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {(data||[]).map((u: {firstName:string; lastName:string; email:string; role:string; isActive?:boolean}) => (
-          <Card key={u.email} className="p-6"><CardContent className="p-0">
+        {(data||[]).map((u: {id:string; firstName:string; lastName:string; email:string; role:string; isActive?:boolean}) => (
+          <Card key={u.email} className="p-6 relative group"><CardContent className="p-0">
+            <Button 
+              variant="destructive" 
+              size="icon" 
+              className="absolute top-4 right-4 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => {
+                if (window.confirm("Are you sure you want to delete this user?")) {
+                  deleteUser.mutate(u.id);
+                }
+              }}
+              disabled={deleteUser.isPending}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
             <div className="flex items-center gap-4 mb-4">
               <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold">{u.firstName[0]}{u.lastName[0]}</div>
               <div><p className="font-semibold">{u.firstName} {u.lastName}</p><p className="text-xs text-muted">{u.email}</p></div>

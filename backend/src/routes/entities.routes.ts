@@ -65,6 +65,13 @@ router.post('/users', authenticate, authorize('SUPER_ADMIN', 'ADMIN'), asyncHand
   res.json({ success: true, data: userWithoutPassword });
 }));
 
+router.delete('/users/:id', authenticate, authorize('SUPER_ADMIN', 'ADMIN'), asyncHandler(async (req, res) => {
+  await prisma.user.delete({
+    where: { id: req.params.id as string }
+  });
+  res.json({ success: true, message: 'User deleted successfully' });
+}));
+
 router.get('/settings', authenticate, asyncHandler(async (_req, res) => {
   let settings = await prisma.companySettings.findFirst();
   if (!settings) settings = await prisma.companySettings.create({ data: {} });
