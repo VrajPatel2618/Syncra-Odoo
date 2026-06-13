@@ -14,6 +14,7 @@ import systemRoutes from './routes/system.routes';
 import procurementRoutes from './routes/procurement.routes';
 import reportsRoutes from './routes/reports.routes';
 import entitiesRoutes from './routes/entities.routes';
+import blockchainRoutes from './routes/blockchain.routes';
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './lib/logger';
 
@@ -72,6 +73,7 @@ app.use('/api/manufacturing', manufacturingRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/procurement', procurementRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/blockchain', blockchainRoutes);
 app.use('/api', entitiesRoutes);
 
 app.use(errorHandler);

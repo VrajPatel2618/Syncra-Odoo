@@ -8,11 +8,11 @@
       "solcConfig": {
         "version": "0.8.20",
         "settings": {
+          "evmVersion": "paris",
           "optimizer": {
-            "enabled": true,
+            "enabled": false,
             "runs": 200
           },
-          "evmVersion": "paris",
           "outputSelection": {
             "*": {
               "*": [
@@ -35,6 +35,78 @@
       ],
       "artifacts": [
         "SyncraAuditTrail"
+      ]
+    },
+    "C:\\Users\\Lenovo\\Downloads\\ERP 2\\blockchain\\contracts\\ERPLedger.sol": {
+      "lastModificationDate": 1781381861416,
+      "contentHash": "3dc265c0fe77a02fcce8dfcb5a0bd497",
+      "sourceName": "contracts/ERPLedger.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "ERPLedger"
+      ]
+    },
+    "C:\\Users\\Lenovo\\Downloads\\ERP 2\\blockchain\\contracts\\StockVerifier.sol": {
+      "lastModificationDate": 1781381861426,
+      "contentHash": "05b55478bb85e741d4cf6d3033c2d5c9",
+      "sourceName": "contracts/StockVerifier.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "StockVerifier"
       ]
     }
   }

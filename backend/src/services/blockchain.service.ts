@@ -1,92 +1,131 @@
-import crypto from 'crypto';
 import { ethers } from 'ethers';
-import prisma from '../lib/prisma';
-import { logger } from '../lib/logger';
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
+import logger from '../lib/logger';
 
-export interface AuditPayload {
-  eventType: string;
-  entityType: string;
-  entityId: string;
-  data: Record<string, unknown>;
+// Load deployed addresses
+let ERPLedgerAddress = process.env.ERP_LEDGER_ADDRESS || '';
+let StockVerifierAddress = process.env.STOCK_VERIFIER_ADDRESS || '';
+
+try {
+  const deployedPath = path.join(__dirname, '../../../blockchain/deployed_addresses.json');
+  if (fs.existsSync(deployedPath)) {
+    const addresses = JSON.parse(fs.readFileSync(deployedPath, 'utf8'));
+    ERPLedgerAddress = addresses.ERPLedger || ERPLedgerAddress;
+    StockVerifierAddress = addresses.StockVerifier || StockVerifierAddress;
+  }
+} catch (e) {
+  logger.warn('Could not load deployed_addresses.json', e);
 }
 
-export class BlockchainService {
+// Minimal ABIs required for our service
+const ERPLedgerABI = [
+  "function createRecord(uint8 _type, string _referenceNumber, string _dataHash, string _metadata) external returns (uint256)",
+  "function updateStatus(uint256 _recordId, uint8 _newStatus, string _reason) external",
+  "function getRecordByReference(string _ref) external view returns (tuple(uint256 id, uint8 recordType, string referenceNumber, string dataHash, address recordedBy, uint256 timestamp, uint8 status, string metadata))",
+  "function getStatusHistory(uint256 _id) external view returns (tuple(uint256 recordId, uint8 oldStatus, uint8 newStatus, string reason, address updatedBy, uint256 timestamp)[])",
+  "function verifyDataHash(uint256 _id, string _hash) external view returns (bool)",
+  "function getTotalRecords() external view returns (uint256)"
+];
+
+const StockVerifierABI = [
+  "function recordStockMove(string _moveReference, string _productCode, string _fromLocation, string _toLocation, uint256 _quantity, string _uom, string _dataHash, string _moveType) external returns (uint256)",
+  "function getProductHistory(string productCode) external view returns (tuple(string moveReference, string productCode, string fromLocation, string toLocation, uint256 quantity, string uom, string dataHash, address recordedBy, uint256 timestamp, string moveType)[])"
+];
+
+class BlockchainService {
   private provider: ethers.JsonRpcProvider | null = null;
   private wallet: ethers.Wallet | null = null;
+  public erpLedger: ethers.Contract | null = null;
+  public stockVerifier: ethers.Contract | null = null;
+  private isEnabled: boolean = false;
 
   constructor() {
-    if (process.env.BLOCKCHAIN_RPC_URL && process.env.BLOCKCHAIN_PRIVATE_KEY) {
-      try {
-        this.provider = new ethers.JsonRpcProvider(process.env.BLOCKCHAIN_RPC_URL);
+    this.isEnabled = process.env.BLOCKCHAIN_ENABLED === 'true';
+    if (!this.isEnabled) return;
+
+    try {
+      this.provider = new ethers.JsonRpcProvider(process.env.POLYGON_RPC_URL || 'https://rpc-amoy.polygon.technology');
+      
+      if (process.env.BLOCKCHAIN_PRIVATE_KEY) {
         this.wallet = new ethers.Wallet(process.env.BLOCKCHAIN_PRIVATE_KEY, this.provider);
-      } catch (e) {
-        logger.warn('Blockchain not configured, using hash-only mode');
+        
+        if (ERPLedgerAddress) {
+          this.erpLedger = new ethers.Contract(ERPLedgerAddress, ERPLedgerABI, this.wallet);
+        }
+        if (StockVerifierAddress) {
+          this.stockVerifier = new ethers.Contract(StockVerifierAddress, StockVerifierABI, this.wallet);
+        }
       }
+    } catch (error) {
+      logger.error('Failed to initialize BlockchainService', error);
+      this.isEnabled = false;
     }
   }
 
-  generateDataHash(data: Record<string, unknown>): string {
-    return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex');
+  public get enabled() { return this.isEnabled; }
+
+  private computeHash(data: any): string {
+    const sortedString = JSON.stringify(data, Object.keys(data).sort());
+    return crypto.createHash('sha256').update(sortedString).digest('hex');
   }
 
-  async recordAudit(payload: AuditPayload): Promise<{ hash: string; txHash?: string }> {
-    const dataHash = this.generateDataHash({
-      ...payload.data,
-      eventType: payload.eventType,
-      entityType: payload.entityType,
-      entityId: payload.entityId,
-      timestamp: new Date().toISOString(),
-    });
+  public async recordOrder(type: 'sales_order' | 'purchase_order' | 'manufacturing_order', data: any, metadata: any) {
+    if (!this.isEnabled || !this.erpLedger) throw new Error("Blockchain not enabled or configured");
 
-    let txHash = `0x${crypto.randomBytes(32).toString('hex')}`;
+    const typeMap = { 'sales_order': 1, 'purchase_order': 2, 'manufacturing_order': 3 };
+    const dataHash = this.computeHash(data);
+    const metaString = JSON.stringify(metadata);
 
-    if (this.wallet && process.env.AUDIT_CONTRACT_ADDRESS) {
-      try {
-        const contract = new ethers.Contract(
-          process.env.AUDIT_CONTRACT_ADDRESS,
-          ['function recordAudit(string eventType, string entityType, string entityId, string dataHash) returns (bytes32)'],
-          this.wallet
-        );
-        const tx = await contract.recordAudit(
-          payload.eventType,
-          payload.entityType,
-          payload.entityId,
-          dataHash
-        );
-        const receipt = await tx.wait();
-        txHash = receipt.hash;
-      } catch (e) {
-        logger.warn('Blockchain tx failed, using local hash', { error: (e as Error).message });
-      }
-    }
+    const tx = await this.erpLedger.createRecord(typeMap[type], data.reference, dataHash, metaString);
+    const receipt = await tx.wait();
 
-    await prisma.blockchainLog.create({
-      data: {
-        txHash,
-        eventType: payload.eventType,
-        entityType: payload.entityType,
-        entityId: payload.entityId,
-        dataHash,
-        status: 'CONFIRMED',
-      },
-    });
-
-    return { hash: dataHash, txHash };
+    return { txHash: tx.hash, dataHash, block: receipt.blockNumber };
   }
 
-  async verifyHash(entityId: string, dataHash: string): Promise<boolean> {
-    const log = await prisma.blockchainLog.findFirst({
-      where: { entityId, dataHash },
-    });
-    return !!log;
+  public async updateOrderStatus(reference: string, newStatus: string, reason: string = '') {
+    if (!this.isEnabled || !this.erpLedger) return null;
+
+    const statusMap: Record<string, number> = { 'draft': 0, 'created': 0, 'confirmed': 1, 'in_progress': 2, 'completed': 3, 'delivered': 3, 'cancelled': 4 };
+    const statusInt = statusMap[newStatus.toLowerCase()] || 0;
+
+    const record = await this.erpLedger.getRecordByReference(reference);
+    const tx = await this.erpLedger.updateStatus(record.id, statusInt, reason);
+    const receipt = await tx.wait();
+
+    return { txHash: tx.hash, block: receipt.blockNumber };
   }
 
-  getStatus() {
+  public async recordStockMove(data: any) {
+    if (!this.isEnabled || !this.stockVerifier) throw new Error("Blockchain not configured");
+
+    const qtyInt = Math.floor(data.quantity * 1000);
+    const dataHash = this.computeHash(data);
+
+    const tx = await this.stockVerifier.recordStockMove(
+      data.reference,
+      data.productCode,
+      data.fromLocation,
+      data.toLocation,
+      qtyInt,
+      data.uom,
+      dataHash,
+      data.moveType
+    );
+    const receipt = await tx.wait();
+
+    return { txHash: tx.hash, dataHash, block: receipt.blockNumber };
+  }
+
+  public async getStats() {
+    if (!this.isEnabled || !this.erpLedger) return { enabled: false };
+    const total = await this.erpLedger.getTotalRecords();
     return {
-      connected: !!this.provider,
-      network: 'polygon',
-      contractAddress: process.env.AUDIT_CONTRACT_ADDRESS || null,
-      lastSync: new Date().toISOString(),
+      enabled: true,
+      totalRecords: total.toString(),
+      network: process.env.POLYGON_RPC_URL?.includes('amoy') ? 'Polygon Amoy Testnet' : 'Polygon Mainnet',
+      erpContract: ERPLedgerAddress
     };
   }
 }

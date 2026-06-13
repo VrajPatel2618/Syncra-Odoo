@@ -163,6 +163,9 @@ model SalesOrder {
   deliveries   Delivery[]
   invoices     Invoice[]
   payments     Payment[]
+  blockchainTxHash String?
+  blockchainBlock  Int?
+  blockchainVerified Boolean @default(false)
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 }
@@ -192,6 +195,9 @@ model PurchaseOrder {
   totalAmount  Decimal        @default(0) 
   notes        String?
   items        PurchaseItem[]
+  blockchainTxHash String?
+  blockchainBlock  Int?
+  blockchainVerified Boolean @default(false)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 }
@@ -273,6 +279,9 @@ model ManufacturingOrder {
   scheduledDate DateTime?
   completedDate DateTime?
   workOrders   WorkOrder[]
+  blockchainTxHash String?
+  blockchainBlock  Int?
+  blockchainVerified Boolean @default(false)
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
 }
@@ -304,7 +313,9 @@ model StockMovement {
   referenceType   String?
   referenceId     String?
   notes           String?
-  blockchainHash  String?
+  blockchainTxHash String?
+  blockchainBlock  Int?
+  blockchainVerified Boolean @default(false)
   verified        Boolean      @default(false)
   createdAt       DateTime     @default(now())
 }
