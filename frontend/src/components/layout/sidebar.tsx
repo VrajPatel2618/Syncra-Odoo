@@ -8,7 +8,7 @@ import { navigationGroups } from "@/lib/navigation";
 import { useUIStore, useAuthStore } from "@/lib/stores";
 import { useMounted } from "@/hooks/use-mounted";
 import { PanelLeftClose, PanelLeft } from "lucide-react";
-import { hasModuleAccess } from "@/lib/permissions";
+import { hasModuleAccess, ModuleType } from "@/lib/permissions";
 
 const iconMap = Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
 
@@ -43,7 +43,7 @@ export function Sidebar() {
       <nav className="flex-1 overflow-y-auto scrollbar-thin py-2">
         {navigationGroups.map((group) => {
           const visibleItems = group.items.filter(item => 
-            !item.moduleId || hasModuleAccess(user?.role, item.moduleId)
+            !item.moduleId || hasModuleAccess(user?.role, item.moduleId as ModuleType)
           );
           if (visibleItems.length === 0) return null;
 
