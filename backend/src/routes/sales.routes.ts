@@ -173,4 +173,79 @@ router.patch('/:id/deliver', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MA
   res.json({ success: true, data: updated });
 }));
 
+router.post('/:id/invoice', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'), asyncHandler(async (req: AuthRequest, res) => {
+  const order = await prisma.salesOrder.findUnique({
+    where: { id: req.params.id as string },
+    include: { invoices: true }
+  });
+  if (!order) throw new AppError('Order not found', 404);
+  if (order.invoices.length > 0) throw new AppError('Invoice already generated for this order', 400);
+
+  const { hash } = await blockchainService.recordAudit({
+    eventType: 'INVOICE_GENERATED',
+    entityType: 'SalesOrder',
+    entityId: order.id,
+    data: { orderNumber: order.orderNumber, total: Number(order.totalAmount) },
+  });
+
+  const invoice = await prisma.invoice.create({
+    data: {
+      invoiceNumber: genNumber('INV'),
+      salesOrderId: order.id,
+      subtotal: order.subtotal,
+      taxAmount: order.taxAmount,
+      totalAmount: order.totalAmount,
+      status: 'PENDING',
+      dueDate: new Date(Date.now() + 15 * 86400000), // 15 days from now
+    }
+  });
+
+  await prisma.auditLog.create({
+    data: { userId: req.user!.id, action: 'CREATE_INVOICE', entityType: 'Invoice', entityId: invoice.id, blockchainHash: hash, verified: true },
+  });
+
+  res.status(201).json({ success: true, data: invoice });
+}));
+
+router.post('/:id/pay', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'), asyncHandler(async (req: AuthRequest, res) => {
+  const { amount, method } = req.body;
+  const order = await prisma.salesOrder.findUnique({
+    where: { id: req.params.id as string },
+    include: { invoices: { where: { status: 'PENDING' } } }
+  });
+  if (!order) throw new AppError('Order not found', 404);
+  
+  const activeInvoice = order.invoices[0];
+  if (!activeInvoice) throw new AppError('No pending invoice found for this order', 400);
+
+  const payment = await prisma.payment.create({
+    data: {
+      paymentNumber: genNumber('PAY'),
+      customerId: order.customerId,
+      salesOrderId: order.id,
+      amount: amount || activeInvoice.totalAmount,
+      method: method || 'BANK_TRANSFER',
+      status: 'COMPLETED',
+    }
+  });
+
+  await prisma.invoice.update({
+    where: { id: activeInvoice.id },
+    data: { status: 'PAID', paidDate: new Date() }
+  });
+
+  const { hash } = await blockchainService.recordAudit({
+    eventType: 'PAYMENT_RECEIVED',
+    entityType: 'SalesOrder',
+    entityId: order.id,
+    data: { orderNumber: order.orderNumber, paymentNumber: payment.paymentNumber, amount: Number(payment.amount) },
+  });
+
+  await prisma.auditLog.create({
+    data: { userId: req.user!.id, action: 'REGISTER_PAYMENT', entityType: 'Payment', entityId: payment.id, blockchainHash: hash, verified: true },
+  });
+
+  res.status(201).json({ success: true, data: payment });
+}));
+
 export default router;

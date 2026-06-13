@@ -319,6 +319,8 @@ model Delivery {
   deliveredDate DateTime?
   trackingNumber String?
   driverName   String?
+  currentLat   Float?
+  currentLng   Float?
   blockchainHash String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
