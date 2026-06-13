@@ -45,7 +45,7 @@ export class AIService {
       }));
 
     return JSON.stringify({
-      company: 'Universal Systems Inc.',
+      company: 'Shiv Furniture Works',
       platform: 'Syncra ERP',
       totalProducts: products,
       lowStockItems,
@@ -68,7 +68,7 @@ export class AIService {
 
   async chat(message: string): Promise<{ response: string; provider: string }> {
     const context = await this.getOperationalContext();
-    const systemPrompt = `You are Syncra AI Copilot for Universal Systems Inc., a furniture manufacturing ERP.
+    const systemPrompt = `You are Syncra AI Copilot for Shiv Furniture Works, a furniture manufacturing ERP.
 Tagline: "Where Inventory Meets Intelligence"
 You help with inventory forecasting, procurement, manufacturing optimization, and business analytics.
 Current operational data: ${context}
@@ -132,7 +132,7 @@ Provide actionable, concise insights. Use bullet points when helpful.`;
       return `📈 **Sales Intelligence**\n\n- Pending orders: ${data.pendingSalesOrders}\n- Total active products: ${data.totalProducts}\n\n**Top Actions**:\n- Focus on high-margin furniture lines\n- Cross-sell matching accessories\n- Review customer payment histories`;
     }
 
-    return `🤖 **Syncra AI Copilot**\n\nI'm analyzing your Universal Systems Inc. operations.\n\n**Quick Stats**:\n- Products: ${data.totalProducts}\n- Low stock items: ${data.lowStockItems.length}\n- Pending sales: ${data.pendingSalesOrders}\n- Active manufacturing: ${data.activeManufacturing}\n\nTry asking:\n- "Why is stock low?"\n- "Predict next week shortages"\n- "Which orders are delayed?"\n- "Suggest procurement actions"`;
+    return `🤖 **Syncra AI Copilot**\n\nI'm analyzing your Shiv Furniture Works operations.\n\n**Quick Stats**:\n- Products: ${data.totalProducts}\n- Low stock items: ${data.lowStockItems.length}\n- Pending sales: ${data.pendingSalesOrders}\n- Active manufacturing: ${data.activeManufacturing}\n\nTry asking:\n- "Why is stock low?"\n- "Predict next week shortages"\n- "Which orders are delayed?"\n- "Suggest procurement actions"`;
   }
 
   async getInsights() {
