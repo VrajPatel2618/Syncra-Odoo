@@ -33,9 +33,6 @@ export default function LandingPage() {
           <h1 className="brand-serif text-4xl md:text-5xl text-[var(--foreground)] leading-tight mb-4">
             We replaced spreadsheets with one system for stock, factory & sales.
           </h1>
-          <p className="text-lg text-[var(--muted)] max-w-2xl mb-6">
-            Built for <strong>Universal Systems Inc.</strong>, Rajkot — a furniture manufacturer that was losing money on wrong stock counts, late POs, and zero production visibility.
-          </p>
           <div className="flex flex-wrap gap-3">
             <Button asChild>
               <Link href="/login">Open ERP Dashboard <ArrowRight className="h-4 w-4" /></Link>

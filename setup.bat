@@ -31,7 +31,7 @@ echo.
 echo   Start backend:  cd backend && npm run dev
 echo   Start frontend: cd frontend && npm run dev
 echo.
-echo   Login: admin@shivfurniture.com / admin123
+echo   Login: admin@universal.com / admin123
 echo   URL:   http://localhost:3000
 echo ========================================
 pause
