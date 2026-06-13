@@ -2,8 +2,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { systemApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { systemApi } from "@/lib/api";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -46,14 +47,15 @@ export default function UsersPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-[var(--surface)] p-6 rounded-lg w-full max-w-md border border-[var(--border)]">
             <h2 className="text-lg font-bold mb-4">Add New User</h2>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <input className="w-full bg-[var(--background)] border border-[var(--border)] rounded px-3 py-2 text-sm" placeholder="First Name" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
-                <input className="w-full bg-[var(--background)] border border-[var(--border)] rounded px-3 py-2 text-sm" placeholder="Last Name" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Input placeholder="First Name" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
+                <Input placeholder="Last Name" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
               </div>
-              <input className="w-full bg-[var(--background)] border border-[var(--border)] rounded px-3 py-2 text-sm" placeholder="Email" type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
-              <input className="w-full bg-[var(--background)] border border-[var(--border)] rounded px-3 py-2 text-sm" placeholder="Password (Optional)" type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
-              <select className="w-full bg-[var(--background)] border border-[var(--border)] rounded px-3 py-2 text-sm" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
+              <Input placeholder="Email" type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+              <Input placeholder="Password (Optional)" type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+              
+              <select className="flex h-9 w-full rounded border border-[var(--border)] bg-[var(--surface)] px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)]" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
                 <option value="ADMIN">Admin</option>
                 <option value="SALES_MANAGER">Sales Manager</option>
                 <option value="SALES_EXECUTIVE">Sales Executive</option>
@@ -62,8 +64,10 @@ export default function UsersPage() {
                 <option value="PRODUCTION_MANAGER">Production Manager</option>
                 <option value="VIEWER">Viewer</option>
               </select>
-              <input className="w-full bg-[var(--background)] border border-[var(--border)] rounded px-3 py-2 text-sm" placeholder="Department" value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} />
-              <div className="mt-2 border-t border-[var(--border)] pt-2">
+              
+              <Input placeholder="Department" value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} />
+              
+              <div className="mt-4 border-t border-[var(--border)] pt-4">
                 <p className="text-xs font-semibold mb-2">Custom Panel Access (Overrides Role Base):</p>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   {['dashboard', 'inventory', 'sales', 'purchase', 'manufacturing', 'audit_log', 'user_management', 'blockchain'].map(panel => (
@@ -77,7 +81,7 @@ export default function UsersPage() {
                             : formData.panels.filter(p => p !== panel);
                           setFormData({ ...formData, panels: newPanels });
                         }}
-                        className="rounded accent-[var(--primary)]"
+                        className="h-4 w-4 rounded border-[var(--border)] bg-[var(--surface)] text-[var(--primary)] focus:ring-[var(--primary)]/30 focus:ring-offset-0 focus:outline-none"
                       />
                       <span className="capitalize">{panel.replace(/_/g, " ")}</span>
                     </label>
@@ -85,7 +89,7 @@ export default function UsersPage() {
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-3 mt-6">
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-[var(--border)]">
               <Button variant="outline" onClick={() => setShowModal(false)}>Cancel</Button>
               <Button onClick={() => createUser.mutate()} disabled={createUser.isPending || !formData.email || !formData.firstName}>
                 {createUser.isPending ? "Saving..." : "Save User"}
