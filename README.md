@@ -1,9 +1,9 @@
 SYNCRA ERP-Where Inventory Meets Intelligence”
 
 The ERP must transform traditional manual business operations into a fully centralized intelligent digital ecosystem.
-========================================================
+
 BUSINESS PROBLEMS TO SOLVE
-========================================================
+
 
 The ERP should solve:
 - spreadsheet dependency
@@ -26,9 +26,9 @@ Every module affects stock:
 - Manufacturing produces finished goods
 - Procurement replenishes shortages
 
-========================================================
+
 FRONTEND STACK
-========================================================
+
 
 Use:
 - Next.js
@@ -39,9 +39,9 @@ Use:
 - Recharts
 - React Query
 
-========================================================
+
 BACKEND STACK
-========================================================
+
 
 Use:
 - Node.js + Express OR FastAPI
@@ -56,17 +56,17 @@ Architecture:
 - logging
 - centralized error handling
 
-========================================================
+
 DATABASE
-========================================================
+
 
 Use:
 - PostgreSQL
 - SQLlite
 
-========================================================
+
 BLOCKCHAIN INTEGRATION
-========================================================
+
 
 IMPORTANT:
 Do NOT build the full ERP on blockchain.
@@ -94,9 +94,9 @@ PostgreSQL
 ↓
 Blockchain Audit Layer
 
-========================================================
+
 AI INTEGRATION
-========================================================
+
 
 Use:
 - OpenAI API
