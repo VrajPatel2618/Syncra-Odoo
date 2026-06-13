@@ -88,7 +88,7 @@ class InventoryService {
                 action: movementType,
                 entityType: 'StockMovement',
                 entityId: movement.id,
-                newValue: { quantity, previousQty, newQty, txHash },
+                newValue: JSON.stringify({ quantity, previousQty, newQty, txHash }),
                 blockchainHash: hash,
                 verified: true,
             },

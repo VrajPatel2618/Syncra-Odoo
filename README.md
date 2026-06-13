@@ -26,31 +26,31 @@ Frontend (Next.js) → Backend API (Express) → PostgreSQL → Blockchain Audit
 
 ### Prerequisites
 - Node.js 18+
-- Docker (for PostgreSQL)
+- Docker (optional, only if you switch Prisma back to PostgreSQL)
 
-### 1. Start Database
-```bash
-docker-compose up -d
-```
-
-### 2. Backend Setup
+### 1. Backend Setup
 ```bash
 cd backend
-cp .env.example .env
+npm install
 npm run db:setup
 npm run dev
 ```
 
-### 3. Frontend Setup
+The backend runs at `http://localhost:5000` and health is available at `http://localhost:5000/api/health`.
+
+### 2. Frontend Setup
 ```bash
 cd frontend
-echo "NEXT_PUBLIC_API_URL=http://localhost:5000/api" > .env.local
+npm install
 npm run dev
 ```
 
-### 4. Blockchain (Optional)
+The frontend runs at `http://localhost:3000` and reads `NEXT_PUBLIC_API_URL` from `frontend/.env.local`.
+
+### 3. Blockchain (Optional)
 ```bash
 cd blockchain
+npm install
 npx hardhat compile
 npx hardhat run scripts/deploy.js --network hardhat
 ```
@@ -96,5 +96,3 @@ Free To Use Qty = On Hand Qty − Reserved Qty
 ## License
 
 MIT — Shiv Furniture Works © 2026
-
-# Syncra-Odoo

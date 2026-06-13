@@ -5,25 +5,20 @@ echo   Where Inventory Meets Intelligence
 echo ========================================
 
 echo.
-echo [1/4] Starting PostgreSQL...
-docker-compose up -d
-timeout /t 5 /nobreak > nul
-
-echo.
-echo [2/4] Setting up backend database...
+echo [1/3] Setting up backend database...
 cd backend
 call npm install
 call npm run db:setup
 cd ..
 
 echo.
-echo [3/4] Installing frontend dependencies...
+echo [2/3] Installing frontend dependencies...
 cd frontend
 call npm install
 cd ..
 
 echo.
-echo [4/4] Compiling blockchain contracts...
+echo [3/3] Compiling blockchain contracts...
 cd blockchain
 call npm install
 call npx hardhat compile

@@ -1,5 +1,5 @@
 import prisma from '../lib/prisma';
-import { MovementType } from '@prisma/client';
+
 import { blockchainService } from './blockchain.service';
 import { AppError } from '../middleware/errorHandler';
 
@@ -14,7 +14,7 @@ export class InventoryService {
     productId: string;
     warehouseId: string;
     quantity: number;
-    movementType: MovementType;
+    movementType: string;
     referenceType?: string;
     referenceId?: string;
     notes?: string;
@@ -100,7 +100,7 @@ export class InventoryService {
         action: movementType,
         entityType: 'StockMovement',
         entityId: movement.id,
-        newValue: { quantity, previousQty, newQty, txHash },
+        newValue: JSON.stringify({ quantity, previousQty, newQty, txHash }),
         blockchainHash: hash,
         verified: true,
       },

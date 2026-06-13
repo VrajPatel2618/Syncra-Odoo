@@ -18,8 +18,8 @@ router.get('/', auth_1.authenticate, (0, errorHandler_1.asyncHandler)(async (req
             ...(category && { categoryId: category }),
             ...(search && {
                 OR: [
-                    { name: { contains: search, mode: 'insensitive' } },
-                    { sku: { contains: search, mode: 'insensitive' } },
+                    { name: { contains: search } },
+                    { sku: { contains: search } },
                 ],
             }),
         },
