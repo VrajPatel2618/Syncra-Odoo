@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,10 +34,54 @@ export default function ProcurementPage() {
 
   const rules = data?.rules || [];
   const summary = data?.summary || { shortages: 3, suggestedPOs: 2, suggestedMOs: 1 };
+  const [showModal, setShowModal] = useState(false);
 
   return (
     <div>
-      <PageHeader title="Procurement Automation" description="Auto-create MO or PO based on stock shortages" icon={Zap} action={{ label: "Configure Rules" }} />
+      <PageHeader 
+        title="Procurement Automation" 
+        description="Auto-create MO or PO based on stock shortages" 
+        icon={Zap} 
+        action={{ label: "Configure Rules", onClick: () => setShowModal(true) }} 
+      />
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-stone-900 border border-stone-700 p-6 rounded-xl w-full max-w-md shadow-2xl">
+            <h2 className="text-xl font-bold text-white mb-2">Configure Rules</h2>
+            <p className="text-sm text-stone-400 mb-6">Set up automated triggers for reordering raw materials or initiating manufacturing orders.</p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-stone-400 uppercase tracking-wider mb-1">Product SKU / ID</label>
+                <input type="text" placeholder="e.g. FG-SFA-001" className="w-full bg-stone-800 border border-stone-700 rounded-md p-2 text-white text-sm focus:border-indigo-500 outline-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-stone-400 uppercase tracking-wider mb-1">Reorder Point</label>
+                  <input type="number" placeholder="Min Stock Level" className="w-full bg-stone-800 border border-stone-700 rounded-md p-2 text-white text-sm focus:border-indigo-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-stone-400 uppercase tracking-wider mb-1">Action Type</label>
+                  <select className="w-full bg-stone-800 border border-stone-700 rounded-md p-2 text-white text-sm focus:border-indigo-500 outline-none">
+                    <option>Make-to-Stock (MO)</option>
+                    <option>Purchase Order (PO)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-8">
+              <Button variant="ghost" onClick={() => setShowModal(false)}>Cancel</Button>
+              <Button onClick={() => {
+                toast.success("Rule saved successfully.");
+                setShowModal(false);
+              }}>Save Rule</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className="p-6 border-l-4 border-l-amber-400"><CardContent className="p-0"><p className="text-sm text-muted">Shortages Detected</p><p className="text-3xl font-bold text-amber-400">{summary.shortages}</p></CardContent></Card>
         <Card className="p-6 border-l-4 border-l-indigo-400"><CardContent className="p-0"><p className="text-sm text-muted">Auto POs Suggested</p><p className="text-3xl font-bold text-indigo-400">{summary.suggestedPOs}</p></CardContent></Card>
