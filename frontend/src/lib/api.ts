@@ -99,6 +99,7 @@ export const systemApi = {
   invoices: () => api.get("/invoices"),
   payments: () => api.get("/payments"),
   users: () => api.get("/users"),
+  createUser: (data: any) => api.post("/users", data),
   markNotificationRead: (id: string) => api.patch(`/system/notifications/${id}/read`),
   procurementRules: () => api.get("/procurement/rules"),
   executeProcurement: (productId: string) => api.post(`/procurement/execute/${productId}`),

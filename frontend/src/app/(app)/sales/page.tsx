@@ -77,7 +77,7 @@ export default function SalesPage() {
         title="Sales Management" 
         description="Order lifecycle: Draft → Confirmed → Delivered" 
         icon={ShoppingCart} 
-        action={hasWriteAccess ? { label: "New Sale", icon: <ShoppingCart className="h-4 w-4" />, onClick: () => setShowModal(true) } : undefined}
+        action={hasWriteAccess ? { label: "New Sale", onClick: () => setShowModal(true) } : undefined}
       />
 
       {showModal && (

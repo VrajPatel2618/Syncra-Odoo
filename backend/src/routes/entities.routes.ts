@@ -54,6 +54,17 @@ router.get('/users', authenticate, authorize('SUPER_ADMIN', 'ADMIN'), asyncHandl
   res.json({ success: true, data: users });
 }));
 
+router.post('/users', authenticate, authorize('SUPER_ADMIN', 'ADMIN'), asyncHandler(async (req, res) => {
+  const { email, password, firstName, lastName, role, department } = req.body;
+  const bcrypt = require('bcryptjs');
+  const hashedPassword = await bcrypt.hash(password || 'password123', 12);
+  const user = await prisma.user.create({
+    data: { email, password: hashedPassword, firstName, lastName, role, department },
+  });
+  const { password: _, ...userWithoutPassword } = user;
+  res.json({ success: true, data: userWithoutPassword });
+}));
+
 router.get('/settings', authenticate, asyncHandler(async (_req, res) => {
   let settings = await prisma.companySettings.findFirst();
   if (!settings) settings = await prisma.companySettings.create({ data: {} });
