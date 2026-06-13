@@ -139,12 +139,7 @@ router.patch('/orders/:id/complete', authenticate, authorize('SUPER_ADMIN', 'ADM
     userId: req.user!.id,
   });
 
-  const { hash } = await blockchainService.recordAudit({
-    eventType: 'MANUFACTURING_COMPLETED',
-    entityType: 'ManufacturingOrder',
-    entityId: order.id,
-    data: { orderNumber: order.orderNumber, quantity: order.quantity },
-  });
+
 
   await prisma.workOrder.updateMany({
     where: { manufacturingOrderId: order.id },

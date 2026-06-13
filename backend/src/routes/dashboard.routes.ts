@@ -73,7 +73,7 @@ router.get(
           totalVendors,
         },
         charts: { monthlySales },
-        blockchain: blockchainService.getStatus(),
+        blockchain: await blockchainService.getStats(),
       },
     });
   })

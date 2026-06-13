@@ -2,7 +2,7 @@ import { ethers } from 'ethers';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import logger from '../lib/logger';
+import { logger } from '../lib/logger';
 
 // Load deployed addresses
 let ERPLedgerAddress = process.env.ERP_LEDGER_ADDRESS || '';

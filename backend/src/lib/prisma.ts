@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { enqueueSalesOrderTx, enqueuePurchaseOrderTx, enqueueStockMoveTx, bgQueue } from './blockchainQueue';
 import { blockchainService } from '../services/blockchain.service';
-import logger from './logger';
+import { logger } from './logger';
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
@@ -16,14 +16,13 @@ export const prisma = prismaBase.$extends({
     salesOrder: {
       async update({ args, query }) {
         const result = await query(args);
-        // If status changed to CONFIRMED, enqueue for blockchain
-        if (args.data.status && args.data.status === 'CONFIRMED' && !result.blockchainTxHash) {
-          enqueueSalesOrderTx(result.id);
-        }
-        // If status changed to something else and it's already verified, update status on chain
-        else if (args.data.status && result.blockchainVerified) {
+        const dataStatus = typeof args.data.status === 'string' ? args.data.status : (args.data.status as any)?.set;
+        
+        if (dataStatus === 'CONFIRMED' && !result.blockchainTxHash) {
+          enqueueSalesOrderTx(result.id as string);
+        } else if (dataStatus && result.blockchainVerified) {
           bgQueue.enqueue(async () => {
-             await blockchainService.updateOrderStatus(result.orderNumber, result.status);
+             await blockchainService.updateOrderStatus(result.orderNumber as string, result.status as string);
              logger.info(`Status update for ${result.orderNumber} sent to Polygon.`);
           });
         }
@@ -33,22 +32,23 @@ export const prisma = prismaBase.$extends({
     purchaseOrder: {
       async update({ args, query }) {
         const result = await query(args);
-        if (args.data.status && args.data.status === 'CONFIRMED' && !result.blockchainTxHash) {
-          enqueuePurchaseOrderTx(result.id);
-        }
-        else if (args.data.status && result.blockchainVerified) {
+        const dataStatus = typeof args.data.status === 'string' ? args.data.status : (args.data.status as any)?.set;
+        
+        if (dataStatus === 'CONFIRMED' && !result.blockchainTxHash) {
+          enqueuePurchaseOrderTx(result.id as string);
+        } else if (dataStatus && result.blockchainVerified) {
           bgQueue.enqueue(async () => {
-             await blockchainService.updateOrderStatus(result.orderNumber, result.status);
+             await blockchainService.updateOrderStatus(result.orderNumber as string, result.status as string);
           });
         }
         return result;
       }
     },
     stockMovement: {
-      async update({ args, query }) {
+      async create({ args, query }) {
         const result = await query(args);
-        if (args.data.status && args.data.status === 'COMPLETED' && !result.blockchainTxHash) {
-          enqueueStockMoveTx(result.id);
+        if (!result.blockchainTxHash) {
+          enqueueStockMoveTx(result.id as string);
         }
         return result;
       }

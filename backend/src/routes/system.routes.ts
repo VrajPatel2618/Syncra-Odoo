@@ -19,7 +19,7 @@ router.get('/insights', authenticate, asyncHandler(async (_req, res) => {
 }));
 
 router.get('/blockchain/status', authenticate, asyncHandler(async (_req, res) => {
-  res.json({ success: true, data: blockchainService.getStatus() });
+  res.json({ success: true, data: await blockchainService.getStats() });
 }));
 
 router.get('/blockchain/logs', authenticate, asyncHandler(async (req, res) => {
@@ -39,7 +39,24 @@ router.get('/audit-logs', authenticate, asyncHandler(async (req, res) => {
     take: parseInt(limit as string),
     orderBy: { createdAt: 'desc' },
   });
-  res.json({ success: true, data: logs });
+
+  const enrichedLogs = await Promise.all(logs.map(async (log) => {
+    let referenceNumber = log.entityId;
+    try {
+      if (log.entityType === 'SalesOrder') {
+        const entity = await prisma.salesOrder.findUnique({ where: { id: log.entityId } });
+        if (entity) referenceNumber = entity.orderNumber;
+      } else if (log.entityType === 'PurchaseOrder') {
+        const entity = await prisma.purchaseOrder.findUnique({ where: { id: log.entityId } });
+        if (entity) referenceNumber = entity.orderNumber;
+      } else if (log.entityType === 'StockMovement') {
+        referenceNumber = log.entityId.substring(0, 8); // Because we used substring(0,8) for stock movements on chain
+      }
+    } catch(e) {}
+    return { ...log, entityId: referenceNumber };
+  }));
+
+  res.json({ success: true, data: enrichedLogs });
 }));
 
 router.get('/notifications', authenticate, asyncHandler(async (req: import('../middleware/auth').AuthRequest, res) => {
@@ -68,7 +85,7 @@ router.get('/health', asyncHandler(async (_req, res) => {
     data: {
       api: 'healthy',
       database: dbStatus,
-      blockchain: blockchainService.getStatus(),
+      blockchain: await blockchainService.getStats(),
       ai: { openai: !!process.env.OPENAI_API_KEY, gemini: !!process.env.GEMINI_API_KEY },
       timestamp: new Date().toISOString(),
     },

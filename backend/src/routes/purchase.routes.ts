@@ -47,14 +47,8 @@ router.patch('/:id/confirm', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MA
     data: { status: 'CONFIRMED' },
     include: { vendor: true, items: true },
   });
-  const { hash } = await blockchainService.recordAudit({
-    eventType: 'PURCHASE_CONFIRMED',
-    entityType: 'PurchaseOrder',
-    entityId: order.id,
-    data: { orderNumber: order.orderNumber },
-  });
   await prisma.auditLog.create({
-    data: { userId: req.user!.id, action: 'CONFIRM', entityType: 'PurchaseOrder', entityId: order.id, blockchainHash: hash, verified: true },
+    data: { userId: req.user!.id, action: 'CONFIRM', entityType: 'PurchaseOrder', entityId: order.id },
   });
   res.json({ success: true, data: order });
 }));
@@ -88,12 +82,7 @@ router.patch('/:id/receive', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MA
     }
   }
 
-  const { hash } = await blockchainService.recordAudit({
-    eventType: 'GOODS_RECEIVED',
-    entityType: 'PurchaseOrder',
-    entityId: order.id,
-    data: { orderNumber: order.orderNumber },
-  });
+
 
   const updated = await prisma.purchaseOrder.update({
     where: { id: order.id },

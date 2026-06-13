@@ -70,13 +70,6 @@ export class InventoryService {
       });
     }
 
-    const { hash, txHash } = await blockchainService.recordAudit({
-      eventType: 'STOCK_MOVEMENT',
-      entityType: 'Inventory',
-      entityId: inventory.id,
-      data: { productId, warehouseId, movementType, quantity, previousQty, newQty },
-    });
-
     const movement = await prisma.stockMovement.create({
       data: {
         productId,
@@ -88,8 +81,6 @@ export class InventoryService {
         referenceType,
         referenceId,
         notes,
-        blockchainHash: hash,
-        verified: true,
       },
       include: { product: true },
     });
@@ -100,9 +91,7 @@ export class InventoryService {
         action: movementType,
         entityType: 'StockMovement',
         entityId: movement.id,
-        newValue: JSON.stringify({ quantity, previousQty, newQty, txHash }),
-        blockchainHash: hash,
-        verified: true,
+        newValue: JSON.stringify({ quantity, previousQty, newQty }),
       },
     });
 

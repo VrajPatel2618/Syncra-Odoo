@@ -1,6 +1,6 @@
 import { blockchainService } from '../services/blockchain.service';
 import prisma from '../lib/prisma';
-import logger from '../lib/logger';
+import { logger } from '../lib/logger';
 
 // Very simple in-memory queue to process blockchain txs asynchronously without blocking the API
 class BlockchainQueue {
@@ -59,6 +59,11 @@ export const enqueueSalesOrderTx = (orderId: string) => {
           blockchainVerified: true
         }
       });
+      await new Promise(r => setTimeout(r, 2000));
+      const latestLog = await prisma.auditLog.findFirst({ where: { entityId: order.id }, orderBy: { createdAt: 'desc' } });
+      if (latestLog) {
+        await prisma.auditLog.update({ where: { id: latestLog.id }, data: { blockchainHash: result.dataHash, verified: true } });
+      }
       logger.info(`SalesOrder ${order.orderNumber} successfully recorded on Polygon.`);
     } catch (e: any) {
       logger.error(`Failed to record SalesOrder ${order.orderNumber} on blockchain`, e);
@@ -89,6 +94,10 @@ export const enqueuePurchaseOrderTx = (orderId: string) => {
           blockchainVerified: true
         }
       });
+      const latestLog = await prisma.auditLog.findFirst({ where: { entityId: order.id }, orderBy: { createdAt: 'desc' } });
+      if (latestLog) {
+        await prisma.auditLog.update({ where: { id: latestLog.id }, data: { blockchainHash: result.dataHash, verified: true } });
+      }
       logger.info(`PurchaseOrder ${order.orderNumber} successfully recorded on Polygon.`);
     } catch (e: any) {
       logger.error(`Failed to record PO ${order.orderNumber} on blockchain`, e);
@@ -122,6 +131,11 @@ export const enqueueStockMoveTx = (moveId: string) => {
           blockchainVerified: true
         }
       });
+      await new Promise(r => setTimeout(r, 2000));
+      const latestLog = await prisma.auditLog.findFirst({ where: { entityId: move.id }, orderBy: { createdAt: 'desc' } });
+      if (latestLog) {
+        await prisma.auditLog.update({ where: { id: latestLog.id }, data: { blockchainHash: result.dataHash, verified: true } });
+      }
       logger.info(`StockMovement ${move.id} successfully recorded on Polygon.`);
     } catch (e: any) {
       logger.error(`Failed to record StockMove ${move.id} on blockchain`, e);

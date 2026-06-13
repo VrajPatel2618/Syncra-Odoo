@@ -88,13 +88,6 @@ router.patch('/:id/confirm', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MA
     });
   }
 
-  const { hash } = await blockchainService.recordAudit({
-    eventType: 'SALES_CONFIRMED',
-    entityType: 'SalesOrder',
-    entityId: order.id,
-    data: { orderNumber: order.orderNumber, total: Number(order.totalAmount) },
-  });
-
   const updated = await prisma.salesOrder.update({
     where: { id: order.id },
     data: { status: 'CONFIRMED' },
@@ -102,7 +95,7 @@ router.patch('/:id/confirm', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MA
   });
 
   await prisma.auditLog.create({
-    data: { userId: req.user!.id, action: 'CONFIRM', entityType: 'SalesOrder', entityId: order.id, blockchainHash: hash, verified: true },
+    data: { userId: req.user!.id, action: 'CONFIRM', entityType: 'SalesOrder', entityId: order.id },
   });
 
   res.json({ success: true, data: updated });
@@ -147,12 +140,6 @@ router.patch('/:id/deliver', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MA
   }
 
   const allDelivered = order.items.every(i => i.quantity === i.deliveredQty || i.quantity === i.quantity);
-  const { hash } = await blockchainService.recordAudit({
-    eventType: 'DELIVERY_COMPLETED',
-    entityType: 'SalesOrder',
-    entityId: order.id,
-    data: { orderNumber: order.orderNumber },
-  });
 
   const updated = await prisma.salesOrder.update({
     where: { id: order.id },
@@ -166,7 +153,6 @@ router.patch('/:id/deliver', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MA
       salesOrderId: order.id,
       status: 'DELIVERED',
       deliveredDate: new Date(),
-      blockchainHash: hash,
     },
   });
 

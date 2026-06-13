@@ -18,9 +18,16 @@ export default function AuditLogsPage() {
       <div className="space-y-3">
         {(data||[]).map((log: {id:string; action:string; entityType:string; entityId:string; user:{firstName:string;lastName:string}; blockchainHash:string; verified:boolean; createdAt:string}) => (
           <Card key={log.id} className="p-4"><CardContent className="p-0 flex items-center justify-between">
-            <div><p className="font-medium">{log.action} • {log.entityType}</p>
-              <p className="text-sm text-muted">{log.user?.firstName} {log.user?.lastName} • {formatDate(log.createdAt)}</p>
-              {log.blockchainHash && <p className="text-xs font-mono text-cyan-400 mt-1">{truncateHash(log.blockchainHash)}</p>}</div>
+            <div>
+              <p className="font-medium text-[var(--foreground)]">{log.action} • {log.entityType} <span className="text-xs text-[var(--muted)] font-normal ml-2">({log.entityId})</span></p>
+              <p className="text-sm text-[var(--muted)]">{log.user?.firstName} {log.user?.lastName} • {formatDate(log.createdAt)}</p>
+              {log.blockchainHash && (
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-xs font-mono text-[var(--primary)]">{truncateHash(log.blockchainHash)}</p>
+                  <button onClick={() => { navigator.clipboard.writeText(log.blockchainHash); alert('Full Hash Copied! Paste this into the Verify screen.'); }} className="text-[10px] bg-[var(--primary)]/10 text-[var(--primary)] px-2 py-0.5 rounded hover:bg-[var(--primary)]/20 transition">Copy Full Hash</button>
+                </div>
+              )}
+            </div>
             {log.verified && <span className="flex items-center gap-1 text-xs text-emerald-400"><CheckCircle className="h-4 w-4" /> Verified</span>}
           </CardContent></Card>
         ))}
