@@ -40,8 +40,8 @@ export default function UsersPage() {
       setShowModal(false);
       
       // Update auth store if the edited user is the currently logged-in user
-      if (currentUser?.id === editingUserId && res.data?.data) {
-        setAuth(res.data.data, token!);
+      if ((currentUser?.id === editingUserId || currentUser?.email === formData.email) && res.data?.data) {
+        setAuth({ ...currentUser, ...res.data.data }, token!);
       }
       
       setEditingUserId(null);
