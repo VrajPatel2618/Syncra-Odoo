@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Libre+Baskerville:wght@700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --background: #f4f1ea;
+  --foreground: #1c1917;
+  --surface: #ffffff;
+  --surface-2: #ebe6dc;
+  --border: #d6d0c4;
+  --primary: #9a3412;
+  --primary-hover: #7c2d12;
+  --accent: #0f766e;
+  --muted: #78716c;
+  --sidebar: #292524;
+  --sidebar-text: #e7e5e4;
+  --warning: #b45309;
+  --danger: #b91c1c;
+}
+
+.dark {
+  --background: #1c1917;
+  --foreground: #f5f5f4;
+  --surface: #292524;
+  --surface-2: #44403c;
+  --border: #57534e;
+  --primary: #ea580c;
+  --primary-hover: #f97316;
+  --accent: #2dd4bf;
+  --muted: #a8a29e;
+  --sidebar: #0c0a09;
+  --sidebar-text: #d6d3d1;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-muted: var(--muted);
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-display: 'Libre Baskerville', Georgia, serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.glass,
+.glass-strong {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.sidebar-bg {
+  background: var(--sidebar);
+  color: var(--sidebar-text);
+}
+
+.brand-serif {
+  font-family: var(--font-display);
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: 4px;
+  padding: 1rem 1.25rem;
+}
+
+.table-head {
+  background: var(--surface-2);
+  border-bottom: 2px solid var(--border);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.scrollbar-thin::-webkit-scrollbar { width: 5px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.gradient-text {
+  color: var(--primary);
+  font-family: var(--font-display);
+}
