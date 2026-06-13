@@ -173,4 +173,53 @@ router.patch('/:id/deliver', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MA
   res.json({ success: true, data: updated });
 }));
 
+router.post('/:id/invoice', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'), asyncHandler(async (req: AuthRequest, res) => {
+  const order = await prisma.salesOrder.findUnique({ where: { id: req.params.id as string } });
+  if (!order) throw new AppError('Order not found', 404);
+  
+  const existing = await prisma.invoice.findFirst({ where: { salesOrderId: order.id } });
+  if (existing) throw new AppError('Order already invoiced', 400);
+
+  const invoice = await prisma.invoice.create({
+    data: {
+      invoiceNumber: genNumber('INV'),
+      salesOrderId: order.id,
+      subtotal: order.subtotal,
+      taxAmount: order.taxAmount,
+      totalAmount: order.totalAmount,
+      status: 'PENDING',
+      dueDate: new Date(Date.now() + 15 * 86400000), // 15 days from now
+    }
+  });
+  
+  res.json({ success: true, data: invoice });
+}));
+
+router.post('/:id/pay', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'), asyncHandler(async (req: AuthRequest, res) => {
+  const order = await prisma.salesOrder.findUnique({ where: { id: req.params.id as string } });
+  if (!order) throw new AppError('Order not found', 404);
+  
+  const existing = await prisma.payment.findFirst({ where: { salesOrderId: order.id } });
+  if (existing) throw new AppError('Order already paid', 400);
+
+  const payment = await prisma.payment.create({
+    data: {
+      paymentNumber: genNumber('PAY'),
+      customerId: order.customerId,
+      salesOrderId: order.id,
+      amount: order.totalAmount,
+      method: req.body.method || 'BANK_TRANSFER',
+      status: 'COMPLETED',
+    }
+  });
+  
+  // Also update invoice status if exists
+  await prisma.invoice.updateMany({
+    where: { salesOrderId: order.id },
+    data: { status: 'PAID', paidDate: new Date() }
+  });
+  
+  res.json({ success: true, data: payment });
+}));
+
 export default router;
