@@ -13,7 +13,7 @@ import { UserCog, Trash2 } from "lucide-react";
 export default function UsersPage() {
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ firstName: "", lastName: "", email: "", role: "VIEWER", department: "Audit", password: "", panels: [] as string[] });
+  const [formData, setFormData] = useState({ firstName: "", lastName: "", email: "", role: "VIEWER", password: "", panels: [] as string[] });
 
   const { data, isLoading } = useQuery({ queryKey: ["users"], queryFn: () => systemApi.users().then(r => r.data.data).catch(() => [
     { firstName: "Rajesh", lastName: "Sharma", email: "admin@universal.com", role: "ADMIN", isActive: true, lastLogin: new Date().toISOString() },
@@ -25,7 +25,7 @@ export default function UsersPage() {
       toast.success("User created successfully");
       setShowModal(false);
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      setFormData({ firstName: "", lastName: "", email: "", role: "VIEWER", department: "Audit", password: "", panels: [] });
+      setFormData({ firstName: "", lastName: "", email: "", role: "VIEWER", password: "", panels: [] });
     },
     onError: (err: any) => toast.error(err?.response?.data?.message || "Failed to create user")
   });
@@ -64,8 +64,6 @@ export default function UsersPage() {
                 <option value="INTELLIGENCE">Intelligence</option>
                 <option value="INVENTORY">Inventory</option>
               </select>
-              
-              <Input placeholder="Department" value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} />
               
               <div className="mt-4 border-t border-[var(--border)] pt-4">
                 <p className="text-xs font-semibold mb-2">Custom Panel Access (Overrides Role Base):</p>
