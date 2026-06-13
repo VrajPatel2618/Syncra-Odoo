@@ -6,6 +6,7 @@ import { inventoryService } from '../services/inventory.service';
 
 const router = Router();
 
+router.get(
   '/',
   authenticate,
   requireModuleAccess('inventory'),
@@ -25,6 +26,7 @@ const router = Router();
   })
 );
 
+router.get(
   '/movements',
   authenticate,
   requireModuleAccess('inventory'),
@@ -40,6 +42,7 @@ const router = Router();
   })
 );
 
+router.get(
   '/alerts',
   authenticate,
   requireModuleAccess('inventory'),
@@ -64,6 +67,7 @@ const router = Router();
   })
 );
 
+router.post(
   '/adjust',
   authenticate,
   requireModuleAccess('inventory', true),
@@ -81,6 +85,7 @@ const router = Router();
   })
 );
 
+router.post(
   '/transfer',
   authenticate,
   requireModuleAccess('inventory', true),

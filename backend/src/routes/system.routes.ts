@@ -43,13 +43,13 @@ router.get('/audit-logs', authenticate, requireModuleAccess('audit_log'), asyncH
   const enrichedLogs = await Promise.all(logs.map(async (log) => {
     let referenceNumber = log.entityId;
     try {
-      if (log.entityType === 'SalesOrder') {
+      if (log.entityId && log.entityType === 'SalesOrder') {
         const entity = await prisma.salesOrder.findUnique({ where: { id: log.entityId } });
         if (entity) referenceNumber = entity.orderNumber;
-      } else if (log.entityType === 'PurchaseOrder') {
+      } else if (log.entityId && log.entityType === 'PurchaseOrder') {
         const entity = await prisma.purchaseOrder.findUnique({ where: { id: log.entityId } });
         if (entity) referenceNumber = entity.orderNumber;
-      } else if (log.entityType === 'StockMovement') {
+      } else if (log.entityId && log.entityType === 'StockMovement') {
         referenceNumber = log.entityId.substring(0, 8); // Because we used substring(0,8) for stock movements on chain
       }
     } catch(e) {}

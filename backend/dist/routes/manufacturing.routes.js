@@ -8,10 +8,9 @@ const prisma_1 = __importDefault(require("../lib/prisma"));
 const errorHandler_1 = require("../middleware/errorHandler");
 const auth_1 = require("../middleware/auth");
 const inventory_service_1 = require("../services/inventory.service");
-const blockchain_service_1 = require("../services/blockchain.service");
 const router = (0, express_1.Router)();
 const genNumber = (prefix) => `${prefix}-${Date.now().toString(36).toUpperCase()}`;
-router.get('/orders', auth_1.authenticate, (0, errorHandler_1.asyncHandler)(async (_req, res) => {
+router.get('/orders', auth_1.authenticate, (0, auth_1.requireModuleAccess)('manufacturing'), (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     const orders = await prisma_1.default.manufacturingOrder.findMany({
         include: {
             bom: { include: { finishedProduct: true, components: { include: { product: true } } } },
@@ -22,11 +21,11 @@ router.get('/orders', auth_1.authenticate, (0, errorHandler_1.asyncHandler)(asyn
     });
     res.json({ success: true, data: orders });
 }));
-router.get('/work-centers', auth_1.authenticate, (0, errorHandler_1.asyncHandler)(async (_req, res) => {
+router.get('/work-centers', auth_1.authenticate, (0, auth_1.requireModuleAccess)('manufacturing'), (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     const centers = await prisma_1.default.workCenter.findMany({ include: { _count: { select: { workOrders: true } } } });
     res.json({ success: true, data: centers });
 }));
-router.get('/boms', auth_1.authenticate, (0, errorHandler_1.asyncHandler)(async (_req, res) => {
+router.get('/boms', auth_1.authenticate, (0, auth_1.requireModuleAccess)('manufacturing'), (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     const boms = await prisma_1.default.billOfMaterial.findMany({
         include: {
             finishedProduct: true,
@@ -36,7 +35,7 @@ router.get('/boms', auth_1.authenticate, (0, errorHandler_1.asyncHandler)(async 
     });
     res.json({ success: true, data: boms });
 }));
-router.post('/orders', auth_1.authenticate, (0, auth_1.authorize)('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'MANUFACTURING'), (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/orders', auth_1.authenticate, (0, auth_1.requireModuleAccess)('manufacturing', true), (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const { bomId, quantity, workCenterId, scheduledDate } = req.body;
     const order = await prisma_1.default.manufacturingOrder.create({
         data: {
@@ -51,7 +50,7 @@ router.post('/orders', auth_1.authenticate, (0, auth_1.authorize)('SUPER_ADMIN',
     });
     res.status(201).json({ success: true, data: order });
 }));
-router.patch('/orders/:id/start', auth_1.authenticate, (0, auth_1.authorize)('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'MANUFACTURING'), (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.patch('/orders/:id/start', auth_1.authenticate, (0, auth_1.requireModuleAccess)('manufacturing', true), (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const order = await prisma_1.default.manufacturingOrder.findUnique({
         where: { id: req.params.id },
         include: { bom: { include: { components: true, operations: { include: { workCenter: true } } } } },
@@ -93,7 +92,7 @@ router.patch('/orders/:id/start', auth_1.authenticate, (0, auth_1.authorize)('SU
     });
     res.json({ success: true, data: updated });
 }));
-router.patch('/orders/:id/complete', auth_1.authenticate, (0, auth_1.authorize)('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'MANUFACTURING'), (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.patch('/orders/:id/complete', auth_1.authenticate, (0, auth_1.requireModuleAccess)('manufacturing', true), (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const order = await prisma_1.default.manufacturingOrder.findUnique({
         where: { id: req.params.id },
         include: { bom: { include: { components: true, finishedProduct: true } } },
@@ -132,12 +131,6 @@ router.patch('/orders/:id/complete', auth_1.authenticate, (0, auth_1.authorize)(
         referenceType: 'ManufacturingOrder',
         referenceId: order.id,
         userId: req.user.id,
-    });
-    const { hash } = await blockchain_service_1.blockchainService.recordAudit({
-        eventType: 'MANUFACTURING_COMPLETED',
-        entityType: 'ManufacturingOrder',
-        entityId: order.id,
-        data: { orderNumber: order.orderNumber, quantity: order.quantity },
     });
     await prisma_1.default.workOrder.updateMany({
         where: { manufacturingOrderId: order.id },

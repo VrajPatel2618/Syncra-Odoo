@@ -7,27 +7,34 @@ const express_1 = require("express");
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const errorHandler_1 = require("../middleware/errorHandler");
 const auth_1 = require("../middleware/auth");
+const permissions_1 = require("../lib/permissions");
 const inventory_service_1 = require("../services/inventory.service");
-const blockchain_service_1 = require("../services/blockchain.service");
 const router = (0, express_1.Router)();
 const genNumber = (prefix) => `${prefix}-${Date.now().toString(36).toUpperCase()}`;
-router.get('/', auth_1.authenticate, (0, errorHandler_1.asyncHandler)(async (_req, res) => {
+router.get('/', auth_1.authenticate, (0, auth_1.requireModuleAccess)('sales'), (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const level = (0, permissions_1.getAccessLevel)(req.user.role, 'sales');
+    const where = level === 'own' ? { createdById: req.user.id } : {};
     const orders = await prisma_1.default.salesOrder.findMany({
+        where,
         include: { customer: true, items: { include: { product: true } }, deliveries: true },
         orderBy: { createdAt: 'desc' },
     });
     res.json({ success: true, data: orders.map(o => ({ ...o, subtotal: Number(o.subtotal), taxAmount: Number(o.taxAmount), totalAmount: Number(o.totalAmount) })) });
 }));
-router.get('/:id', auth_1.authenticate, (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.get('/:id', auth_1.authenticate, (0, auth_1.requireModuleAccess)('sales'), (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const level = (0, permissions_1.getAccessLevel)(req.user.role, 'sales');
+    const where = { id: req.params.id };
+    if (level === 'own')
+        where.createdById = req.user.id;
     const order = await prisma_1.default.salesOrder.findUnique({
-        where: { id: req.params.id },
+        where,
         include: { customer: true, items: { include: { product: true } }, deliveries: true, invoices: true, payments: true },
     });
     if (!order)
-        throw new errorHandler_1.AppError('Order not found', 404);
+        throw new errorHandler_1.AppError('Order not found or access denied', 404);
     res.json({ success: true, data: order });
 }));
-router.post('/', auth_1.authenticate, (0, auth_1.authorize)('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'), (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/', auth_1.authenticate, (0, auth_1.requireModuleAccess)('sales', true), (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const { customerId, items, deliveryDate, notes } = req.body;
     let subtotal = 0;
     const orderItems = items.map((item) => {
@@ -45,13 +52,14 @@ router.post('/', auth_1.authenticate, (0, auth_1.authorize)('SUPER_ADMIN', 'ADMI
             subtotal,
             taxAmount,
             totalAmount: subtotal + taxAmount,
+            createdById: req.user.id,
             items: { create: orderItems },
         },
         include: { customer: true, items: { include: { product: true } } },
     });
     res.status(201).json({ success: true, data: order });
 }));
-router.patch('/:id/confirm', auth_1.authenticate, (0, auth_1.authorize)('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'), (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.patch('/:id/confirm', auth_1.authenticate, (0, auth_1.requireModuleAccess)('sales', true), (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const order = await prisma_1.default.salesOrder.findUnique({
         where: { id: req.params.id },
         include: { items: { include: { product: true } } },
@@ -89,23 +97,17 @@ router.patch('/:id/confirm', auth_1.authenticate, (0, auth_1.authorize)('SUPER_A
             userId: req.user.id,
         });
     }
-    const { hash } = await blockchain_service_1.blockchainService.recordAudit({
-        eventType: 'SALES_CONFIRMED',
-        entityType: 'SalesOrder',
-        entityId: order.id,
-        data: { orderNumber: order.orderNumber, total: Number(order.totalAmount) },
-    });
     const updated = await prisma_1.default.salesOrder.update({
         where: { id: order.id },
         data: { status: 'CONFIRMED' },
         include: { customer: true, items: { include: { product: true } } },
     });
     await prisma_1.default.auditLog.create({
-        data: { userId: req.user.id, action: 'CONFIRM', entityType: 'SalesOrder', entityId: order.id, blockchainHash: hash, verified: true },
+        data: { userId: req.user.id, action: 'CONFIRM', entityType: 'SalesOrder', entityId: order.id },
     });
     res.json({ success: true, data: updated });
 }));
-router.patch('/:id/deliver', auth_1.authenticate, (0, auth_1.authorize)('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'WAREHOUSE'), (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.patch('/:id/deliver', auth_1.authenticate, (0, auth_1.requireModuleAccess)('sales', true), (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const order = await prisma_1.default.salesOrder.findUnique({
         where: { id: req.params.id },
         include: { items: true },
@@ -143,12 +145,6 @@ router.patch('/:id/deliver', auth_1.authenticate, (0, auth_1.authorize)('SUPER_A
         }
     }
     const allDelivered = order.items.every(i => i.quantity === i.deliveredQty || i.quantity === i.quantity);
-    const { hash } = await blockchain_service_1.blockchainService.recordAudit({
-        eventType: 'DELIVERY_COMPLETED',
-        entityType: 'SalesOrder',
-        entityId: order.id,
-        data: { orderNumber: order.orderNumber },
-    });
     const updated = await prisma_1.default.salesOrder.update({
         where: { id: order.id },
         data: { status: 'FULLY_DELIVERED' },
@@ -160,9 +156,52 @@ router.patch('/:id/deliver', auth_1.authenticate, (0, auth_1.authorize)('SUPER_A
             salesOrderId: order.id,
             status: 'DELIVERED',
             deliveredDate: new Date(),
-            blockchainHash: hash,
         },
     });
     res.json({ success: true, data: updated });
+}));
+router.post('/:id/invoice', auth_1.authenticate, (0, auth_1.requireModuleAccess)('sales', true), (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const order = await prisma_1.default.salesOrder.findUnique({ where: { id: req.params.id } });
+    if (!order)
+        throw new errorHandler_1.AppError('Order not found', 404);
+    const existing = await prisma_1.default.invoice.findFirst({ where: { salesOrderId: order.id } });
+    if (existing)
+        throw new errorHandler_1.AppError('Order already invoiced', 400);
+    const invoice = await prisma_1.default.invoice.create({
+        data: {
+            invoiceNumber: genNumber('INV'),
+            salesOrderId: order.id,
+            subtotal: order.subtotal,
+            taxAmount: order.taxAmount,
+            totalAmount: order.totalAmount,
+            status: 'PENDING',
+            dueDate: new Date(Date.now() + 15 * 86400000), // 15 days from now
+        }
+    });
+    res.json({ success: true, data: invoice });
+}));
+router.post('/:id/pay', auth_1.authenticate, (0, auth_1.requireModuleAccess)('sales', true), (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const order = await prisma_1.default.salesOrder.findUnique({ where: { id: req.params.id } });
+    if (!order)
+        throw new errorHandler_1.AppError('Order not found', 404);
+    const existing = await prisma_1.default.payment.findFirst({ where: { salesOrderId: order.id } });
+    if (existing)
+        throw new errorHandler_1.AppError('Order already paid', 400);
+    const payment = await prisma_1.default.payment.create({
+        data: {
+            paymentNumber: genNumber('PAY'),
+            customerId: order.customerId,
+            salesOrderId: order.id,
+            amount: order.totalAmount,
+            method: req.body.method || 'BANK_TRANSFER',
+            status: 'COMPLETED',
+        }
+    });
+    // Also update invoice status if exists
+    await prisma_1.default.invoice.updateMany({
+        where: { salesOrderId: order.id },
+        data: { status: 'PAID', paidDate: new Date() }
+    });
+    res.json({ success: true, data: payment });
 }));
 exports.default = router;

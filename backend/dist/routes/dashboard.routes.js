@@ -7,14 +7,17 @@ const express_1 = require("express");
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const errorHandler_1 = require("../middleware/errorHandler");
 const auth_1 = require("../middleware/auth");
+const permissions_1 = require("../lib/permissions");
 const blockchain_service_1 = require("../services/blockchain.service");
 const router = (0, express_1.Router)();
-router.get('/stats', auth_1.authenticate, (0, errorHandler_1.asyncHandler)(async (_req, res) => {
+router.get('/stats', auth_1.authenticate, (0, auth_1.requireModuleAccess)('dashboard'), (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const level = (0, permissions_1.getAccessLevel)(req.user.role, 'dashboard');
+    const isLimited = level === 'limited';
     const [totalProducts, totalCustomers, totalVendors, salesOrders, purchaseOrders, manufacturingOrders, inventory, deliveries,] = await Promise.all([
         prisma_1.default.product.count({ where: { isActive: true } }),
         prisma_1.default.customer.count({ where: { isActive: true } }),
         prisma_1.default.vendor.count({ where: { isActive: true } }),
-        prisma_1.default.salesOrder.findMany({ include: { items: true } }),
+        prisma_1.default.salesOrder.findMany({ where: isLimited ? { createdById: req.user.id } : {}, include: { items: true } }),
         prisma_1.default.purchaseOrder.findMany(),
         prisma_1.default.manufacturingOrder.findMany(),
         prisma_1.default.inventory.findMany({ include: { product: true } }),
@@ -39,6 +42,19 @@ router.get('/stats', auth_1.authenticate, (0, errorHandler_1.asyncHandler)(async
             orders: monthOrders.length,
         };
     });
+    if (isLimited) {
+        return res.json({
+            success: true,
+            data: {
+                totalRevenue,
+                salesOrders: salesOrders.length,
+                pendingDeliveries,
+                delayedOrders,
+                monthlySales,
+                isLimited: true,
+            }
+        });
+    }
     res.json({
         success: true,
         data: {
@@ -54,7 +70,7 @@ router.get('/stats', auth_1.authenticate, (0, errorHandler_1.asyncHandler)(async
                 totalVendors,
             },
             charts: { monthlySales },
-            blockchain: blockchain_service_1.blockchainService.getStatus(),
+            blockchain: await blockchain_service_1.blockchainService.getStats(),
         },
     });
 }));

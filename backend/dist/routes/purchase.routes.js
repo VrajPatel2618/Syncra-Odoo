@@ -8,17 +8,16 @@ const prisma_1 = __importDefault(require("../lib/prisma"));
 const errorHandler_1 = require("../middleware/errorHandler");
 const auth_1 = require("../middleware/auth");
 const inventory_service_1 = require("../services/inventory.service");
-const blockchain_service_1 = require("../services/blockchain.service");
 const router = (0, express_1.Router)();
 const genNumber = (prefix) => `${prefix}-${Date.now().toString(36).toUpperCase()}`;
-router.get('/', auth_1.authenticate, (0, errorHandler_1.asyncHandler)(async (_req, res) => {
+router.get('/', auth_1.authenticate, (0, auth_1.requireModuleAccess)('purchase'), (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     const orders = await prisma_1.default.purchaseOrder.findMany({
         include: { vendor: true, items: { include: { product: true } } },
         orderBy: { createdAt: 'desc' },
     });
     res.json({ success: true, data: orders });
 }));
-router.post('/', auth_1.authenticate, (0, auth_1.authorize)('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'PURCHASE'), (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/', auth_1.authenticate, (0, auth_1.requireModuleAccess)('purchase', true), (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const { vendorId, items, expectedDate, notes } = req.body;
     let subtotal = 0;
     const orderItems = items.map((item) => {
@@ -42,24 +41,18 @@ router.post('/', auth_1.authenticate, (0, auth_1.authorize)('SUPER_ADMIN', 'ADMI
     });
     res.status(201).json({ success: true, data: order });
 }));
-router.patch('/:id/confirm', auth_1.authenticate, (0, auth_1.authorize)('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'PURCHASE'), (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.patch('/:id/confirm', auth_1.authenticate, (0, auth_1.requireModuleAccess)('purchase', true), (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const order = await prisma_1.default.purchaseOrder.update({
         where: { id: req.params.id },
         data: { status: 'CONFIRMED' },
         include: { vendor: true, items: true },
     });
-    const { hash } = await blockchain_service_1.blockchainService.recordAudit({
-        eventType: 'PURCHASE_CONFIRMED',
-        entityType: 'PurchaseOrder',
-        entityId: order.id,
-        data: { orderNumber: order.orderNumber },
-    });
     await prisma_1.default.auditLog.create({
-        data: { userId: req.user.id, action: 'CONFIRM', entityType: 'PurchaseOrder', entityId: order.id, blockchainHash: hash, verified: true },
+        data: { userId: req.user.id, action: 'CONFIRM', entityType: 'PurchaseOrder', entityId: order.id },
     });
     res.json({ success: true, data: order });
 }));
-router.patch('/:id/receive', auth_1.authenticate, (0, auth_1.authorize)('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'WAREHOUSE', 'PURCHASE'), (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.patch('/:id/receive', auth_1.authenticate, (0, auth_1.requireModuleAccess)('purchase', true), (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const order = await prisma_1.default.purchaseOrder.findUnique({
         where: { id: req.params.id },
         include: { items: true },
@@ -87,12 +80,6 @@ router.patch('/:id/receive', auth_1.authenticate, (0, auth_1.authorize)('SUPER_A
             });
         }
     }
-    const { hash } = await blockchain_service_1.blockchainService.recordAudit({
-        eventType: 'GOODS_RECEIVED',
-        entityType: 'PurchaseOrder',
-        entityId: order.id,
-        data: { orderNumber: order.orderNumber },
-    });
     const updated = await prisma_1.default.purchaseOrder.update({
         where: { id: order.id },
         data: { status: 'FULLY_RECEIVED' },

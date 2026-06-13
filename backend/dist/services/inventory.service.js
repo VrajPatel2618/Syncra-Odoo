@@ -5,7 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.inventoryService = exports.InventoryService = void 0;
 const prisma_1 = __importDefault(require("../lib/prisma"));
-const blockchain_service_1 = require("./blockchain.service");
 const errorHandler_1 = require("../middleware/errorHandler");
 class InventoryService {
     async getFreeQty(productId, warehouseId) {
@@ -60,12 +59,6 @@ class InventoryService {
                 data: { onHandQty: newQty },
             });
         }
-        const { hash, txHash } = await blockchain_service_1.blockchainService.recordAudit({
-            eventType: 'STOCK_MOVEMENT',
-            entityType: 'Inventory',
-            entityId: inventory.id,
-            data: { productId, warehouseId, movementType, quantity, previousQty, newQty },
-        });
         const movement = await prisma_1.default.stockMovement.create({
             data: {
                 productId,
@@ -77,8 +70,6 @@ class InventoryService {
                 referenceType,
                 referenceId,
                 notes,
-                blockchainHash: hash,
-                verified: true,
             },
             include: { product: true },
         });
@@ -88,9 +79,7 @@ class InventoryService {
                 action: movementType,
                 entityType: 'StockMovement',
                 entityId: movement.id,
-                newValue: JSON.stringify({ quantity, previousQty, newQty, txHash }),
-                blockchainHash: hash,
-                verified: true,
+                newValue: JSON.stringify({ quantity, previousQty, newQty }),
             },
         });
         return movement;

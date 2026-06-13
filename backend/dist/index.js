@@ -19,6 +19,7 @@ const system_routes_1 = __importDefault(require("./routes/system.routes"));
 const procurement_routes_1 = __importDefault(require("./routes/procurement.routes"));
 const reports_routes_1 = __importDefault(require("./routes/reports.routes"));
 const entities_routes_1 = __importDefault(require("./routes/entities.routes"));
+const blockchain_routes_1 = __importDefault(require("./routes/blockchain.routes"));
 const errorHandler_1 = require("./middleware/errorHandler");
 const logger_1 = require("./lib/logger");
 dotenv_1.default.config();
@@ -67,6 +68,7 @@ app.use('/api/manufacturing', manufacturing_routes_1.default);
 app.use('/api/system', system_routes_1.default);
 app.use('/api/procurement', procurement_routes_1.default);
 app.use('/api/reports', reports_routes_1.default);
+app.use('/api/blockchain', blockchain_routes_1.default);
 app.use('/api', entities_routes_1.default);
 app.use(errorHandler_1.errorHandler);
 app.listen(PORT, HOST, () => {

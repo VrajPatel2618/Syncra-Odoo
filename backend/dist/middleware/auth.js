@@ -3,10 +3,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authorize = exports.authenticate = void 0;
+exports.requireModuleAccess = exports.authorize = exports.authenticate = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const errorHandler_1 = require("./errorHandler");
 const prisma_1 = __importDefault(require("../lib/prisma"));
+const permissions_1 = require("../lib/permissions");
 const authenticate = async (req, _res, next) => {
     try {
         const authHeader = req.headers.authorization;
@@ -42,3 +43,18 @@ const authorize = (...roles) => {
     };
 };
 exports.authorize = authorize;
+const requireModuleAccess = (module, write = false) => {
+    return (req, _res, next) => {
+        if (!req.user) {
+            return next(new errorHandler_1.AppError('Authentication required', 401));
+        }
+        if (!(0, permissions_1.hasModuleAccess)(req.user.role, module)) {
+            return next(new errorHandler_1.AppError('You do not have access to this module.', 403));
+        }
+        if (write && !(0, permissions_1.canWrite)(req.user.role, module)) {
+            return next(new errorHandler_1.AppError('You have read-only access to this module.', 403));
+        }
+        next();
+    };
+};
+exports.requireModuleAccess = requireModuleAccess;

@@ -9,7 +9,7 @@ const errorHandler_1 = require("../middleware/errorHandler");
 const auth_1 = require("../middleware/auth");
 const inventory_service_1 = require("../services/inventory.service");
 const router = (0, express_1.Router)();
-router.get('/', auth_1.authenticate, (0, errorHandler_1.asyncHandler)(async (_req, res) => {
+router.get('/', auth_1.authenticate, (0, auth_1.requireModuleAccess)('inventory'), (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     const inventory = await prisma_1.default.inventory.findMany({
         include: { product: { include: { category: true } }, warehouse: true },
         orderBy: { updatedAt: 'desc' },
@@ -21,7 +21,7 @@ router.get('/', auth_1.authenticate, (0, errorHandler_1.asyncHandler)(async (_re
     }));
     res.json({ success: true, data: enriched });
 }));
-router.get('/movements', auth_1.authenticate, (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.get('/movements', auth_1.authenticate, (0, auth_1.requireModuleAccess)('inventory'), (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const { productId, limit = '50' } = req.query;
     const movements = await prisma_1.default.stockMovement.findMany({
         where: productId ? { productId: productId } : undefined,
@@ -31,7 +31,7 @@ router.get('/movements', auth_1.authenticate, (0, errorHandler_1.asyncHandler)(a
     });
     res.json({ success: true, data: movements });
 }));
-router.get('/alerts', auth_1.authenticate, (0, errorHandler_1.asyncHandler)(async (_req, res) => {
+router.get('/alerts', auth_1.authenticate, (0, auth_1.requireModuleAccess)('inventory'), (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     const inventory = await prisma_1.default.inventory.findMany({
         include: { product: true, warehouse: true },
     });
@@ -50,7 +50,7 @@ router.get('/alerts', auth_1.authenticate, (0, errorHandler_1.asyncHandler)(asyn
     }));
     res.json({ success: true, data: alerts });
 }));
-router.post('/adjust', auth_1.authenticate, (0, auth_1.authorize)('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'WAREHOUSE'), (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/adjust', auth_1.authenticate, (0, auth_1.requireModuleAccess)('inventory', true), (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const { productId, warehouseId, quantity, movementType, notes } = req.body;
     const movement = await inventory_service_1.inventoryService.adjustStock({
         productId,
@@ -62,7 +62,7 @@ router.post('/adjust', auth_1.authenticate, (0, auth_1.authorize)('SUPER_ADMIN',
     });
     res.json({ success: true, data: movement });
 }));
-router.post('/transfer', auth_1.authenticate, (0, auth_1.authorize)('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'WAREHOUSE'), (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/transfer', auth_1.authenticate, (0, auth_1.requireModuleAccess)('inventory', true), (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const { productId, fromWarehouseId, toWarehouseId, quantity } = req.body;
     await inventory_service_1.inventoryService.adjustStock({
         productId,
