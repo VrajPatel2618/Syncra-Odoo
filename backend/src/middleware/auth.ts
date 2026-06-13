@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AppError } from './errorHandler';
 import prisma from '../lib/prisma';
-import { ModuleType, hasModuleAccess, canWrite } from '../lib/permissions';
 
 export interface AuthRequest extends Request {
   user?: {
@@ -55,21 +54,6 @@ export const authorize = (...roles: string[]) => {
     }
     if (roles.length > 0 && !roles.includes(req.user.role)) {
       return next(new AppError('Insufficient permissions', 403));
-    }
-    next();
-  };
-};
-
-export const requireModuleAccess = (module: ModuleType, write: boolean = false) => {
-  return (req: AuthRequest, _res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return next(new AppError('Authentication required', 401));
-    }
-    if (!hasModuleAccess(req.user.role, module)) {
-      return next(new AppError('You do not have access to this module.', 403));
-    }
-    if (write && !canWrite(req.user.role, module)) {
-      return next(new AppError('You have read-only access to this module.', 403));
     }
     next();
   };

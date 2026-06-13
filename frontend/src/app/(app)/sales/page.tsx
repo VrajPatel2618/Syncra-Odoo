@@ -10,8 +10,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/lib/stores";
-import { canWrite } from "@/lib/permissions";
 
 const mockSales = [
   { id: "1", orderNumber: "SO-DEMO001", customer: { name: "Modern Homes Pvt Ltd" }, status: "CONFIRMED", totalAmount: 106198, orderDate: new Date().toISOString(), deliveryDate: new Date(Date.now() + 7*86400000).toISOString() },
@@ -21,14 +19,13 @@ const mockSales = [
 const columns = [
   { status: "DRAFT", label: "Draft", color: "border-slate-500/30" },
   { status: "CONFIRMED", label: "Confirmed", color: "border-blue-500/30" },
-  { status: "PARTIALLY_DELIVERED", label: "Partial", color: "border-amber-500/30" },
   { status: "FULLY_DELIVERED", label: "Delivered", color: "border-emerald-500/30" },
+  { status: "COMPLETED", label: "Paid", color: "border-indigo-500/30" },
+  { status: "CANCELLED", label: "Cancelled", color: "border-rose-500/30" },
 ];
 
 export default function SalesPage() {
   const queryClient = useQueryClient();
-  const user = useAuthStore((s) => s.user);
-  const hasWriteAccess = canWrite(user?.role, "sales");
   const [showModal, setShowModal] = useState(false);
   const [customerId, setCustomerId] = useState("");
   const [productId, setProductId] = useState("");
@@ -77,7 +74,7 @@ export default function SalesPage() {
         title="Sales Management" 
         description="Order lifecycle: Draft → Confirmed → Delivered" 
         icon={ShoppingCart} 
-        action={hasWriteAccess ? { label: "New Sale", onClick: () => setShowModal(true) } : undefined}
+        action={{ label: "+ New Order", onClick: () => setShowModal(true) }} 
       />
 
       {showModal && (
@@ -124,7 +121,7 @@ export default function SalesPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         {columns.map((col) => (
           <Card key={col.status} className={`p-4 border-t-2 ${col.color}`}>
             <CardContent className="p-0">
@@ -148,7 +145,8 @@ export default function SalesPage() {
         { key: "status", header: "Status", render: (o: any) => <StatusBadge status={o.status as string} /> },
         { key: "totalAmount", header: "Total", render: (o: any) => formatCurrency(o.totalAmount as number) },
         { key: "orderDate", header: "Date", render: (o: any) => formatDate(o.orderDate as string) },
-        ...(hasWriteAccess ? [{ key: "actions", header: "Actions", render: (o: any) => {
+
+        { key: "actions", header: "Actions", render: (o: any) => {
           const handleAction = (promise: Promise<any>, successMsg: string) => {
             toast.promise(promise, {
               loading: 'Processing...',
@@ -164,18 +162,15 @@ export default function SalesPage() {
               {o.status === "DRAFT" && (
                 <button className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onClick={() => handleAction(salesApi.confirm(o.id as string), "Order confirmed")}>Confirm</button>
               )}
-              {(o.status === "CONFIRMED" || o.status === "PARTIALLY_DELIVERED") && (
+              {(o.status === "CONFIRMED" || o.status === "IN_PROGRESS") && (
                 <button className="text-xs bg-indigo-500 hover:bg-indigo-600 text-white px-2 py-1 rounded" onClick={() => handleAction(salesApi.deliver(o.id as string), "Order delivered")}>Deliver</button>
               )}
-              {o.status !== "DRAFT" && (
-                <>
-                  <button className="text-xs bg-cyan-500 hover:bg-cyan-600 text-white px-2 py-1 rounded" onClick={() => handleAction(salesApi.invoice(o.id as string), "Invoice generated")}>Invoice</button>
-                  <button className="text-xs bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded" onClick={() => handleAction(salesApi.pay(o.id as string), "Payment recorded")}>Pay</button>
-                </>
+              {(o.status === "DELIVERED" || o.status === "FULLY_DELIVERED" || o.status === "PARTIALLY_DELIVERED") && (
+                <button className="text-xs bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded" onClick={() => handleAction(salesApi.pay(o.id as string), "Payment recorded")}>Pay</button>
               )}
             </div>
           );
-        }}] : []),
+        }},
       ]} />
     </div>
   );

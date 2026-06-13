@@ -7,7 +7,6 @@ interface User {
   firstName: string;
   lastName: string;
   role: string;
-  panels?: string | string[] | null;
   avatar?: string;
 }
 

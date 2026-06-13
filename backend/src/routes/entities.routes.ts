@@ -48,44 +48,10 @@ router.get('/payments', authenticate, asyncHandler(async (_req, res) => {
 
 router.get('/users', authenticate, authorize('SUPER_ADMIN', 'ADMIN'), asyncHandler(async (_req, res) => {
   const users = await prisma.user.findMany({
-    select: { id: true, email: true, firstName: true, lastName: true, role: true, panels: true, isActive: true, lastLogin: true, createdAt: true },
+    select: { id: true, email: true, firstName: true, lastName: true, role: true, isActive: true, lastLogin: true, createdAt: true },
     orderBy: { createdAt: 'desc' },
   });
   res.json({ success: true, data: users });
-}));
-
-router.post('/users', authenticate, authorize('SUPER_ADMIN', 'ADMIN'), asyncHandler(async (req, res) => {
-  const { email, password, firstName, lastName, role, department, panels } = req.body;
-  const bcrypt = require('bcryptjs');
-  const hashedPassword = await bcrypt.hash(password || 'password123', 12);
-  const user = await prisma.user.create({
-    data: { email, password: hashedPassword, firstName, lastName, role, department, panels: panels ? JSON.stringify(panels) : null },
-  });
-  const { password: _, ...userWithoutPassword } = user;
-  res.json({ success: true, data: userWithoutPassword });
-}));
-
-router.put('/users/:id', authenticate, authorize('SUPER_ADMIN', 'ADMIN'), asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const { email, password, firstName, lastName, role, department, panels } = req.body;
-  const updateData: any = { email, firstName, lastName, role, department, panels: panels ? JSON.stringify(panels) : null };
-  if (password) {
-    const bcrypt = require('bcryptjs');
-    updateData.password = await bcrypt.hash(password, 12);
-  }
-  const user = await prisma.user.update({
-    where: { id: id as string },
-    data: updateData,
-  });
-  const { password: _, ...userWithoutPassword } = user;
-  res.json({ success: true, data: userWithoutPassword });
-}));
-
-router.delete('/users/:id', authenticate, authorize('SUPER_ADMIN', 'ADMIN'), asyncHandler(async (req, res) => {
-  await prisma.user.delete({
-    where: { id: req.params.id as string }
-  });
-  res.json({ success: true, message: 'User deleted successfully' });
 }));
 
 router.get('/settings', authenticate, asyncHandler(async (_req, res) => {

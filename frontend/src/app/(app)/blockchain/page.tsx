@@ -28,8 +28,9 @@ export default function BlockchainPage() {
     try {
       const { data } = await api.get('/blockchain/stats');
       setStats(data);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.log("Blockchain stats error:", e.message);
+      setStats({ enabled: false, error: "Blockchain offline" });
     } finally {
       setLoading(false);
     }
@@ -55,8 +56,8 @@ export default function BlockchainPage() {
     try {
       const { data } = await api.get(`/blockchain/stock-history?productCode=${stockCode}`);
       setStockHistory(data);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.log("Stock search error:", e.message);
     } finally {
       setStockLoading(false);
     }

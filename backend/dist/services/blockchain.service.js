@@ -100,13 +100,18 @@ class BlockchainService {
     async getStats() {
         if (!this.isEnabled || !this.erpLedger)
             return { enabled: false };
-        const total = await this.erpLedger.getTotalRecords();
-        return {
-            enabled: true,
-            totalRecords: total.toString(),
-            network: process.env.POLYGON_RPC_URL?.includes('amoy') ? 'Polygon Amoy Testnet' : 'Polygon Mainnet',
-            erpContract: ERPLedgerAddress
-        };
+        try {
+            const total = await this.erpLedger.getTotalRecords();
+            return {
+                enabled: true,
+                totalRecords: total.toString(),
+                network: process.env.POLYGON_RPC_URL?.includes('amoy') ? 'Polygon Amoy Testnet' : 'Polygon Mainnet',
+                erpContract: ERPLedgerAddress
+            };
+        }
+        catch (e) {
+            return { enabled: false, error: "Node Unreachable" };
+        }
     }
 }
 exports.blockchainService = new BlockchainService();

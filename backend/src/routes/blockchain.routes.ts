@@ -1,10 +1,9 @@
 import { Router } from 'express';
 import { blockchainService } from '../services/blockchain.service';
-import { authenticate, requireModuleAccess } from '../middleware/auth';
 
 const router = Router();
 
-router.post('/verify', authenticate, requireModuleAccess('blockchain'), async (req, res) => {
+router.post('/verify', async (req, res) => {
   try {
     if (!blockchainService.enabled || !blockchainService.erpLedger) {
       return res.status(400).json({ error: "Blockchain is not enabled" });
@@ -38,7 +37,7 @@ router.post('/verify', authenticate, requireModuleAccess('blockchain'), async (r
   }
 });
 
-router.get('/stock-history', authenticate, requireModuleAccess('blockchain'), async (req, res) => {
+router.get('/stock-history', async (req, res) => {
   try {
     if (!blockchainService.enabled || !blockchainService.stockVerifier) {
       return res.status(400).json({ error: "Blockchain is not enabled" });
@@ -65,7 +64,7 @@ router.get('/stock-history', authenticate, requireModuleAccess('blockchain'), as
   }
 });
 
-router.get('/stats', authenticate, requireModuleAccess('blockchain'), async (req, res) => {
+router.get('/stats', async (req, res) => {
   try {
     const stats = await blockchainService.getStats();
     res.json(stats);

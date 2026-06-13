@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import prisma from '../lib/prisma';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
-import { authenticate, authorize, AuthRequest, requireModuleAccess } from '../middleware/auth';
+import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { inventoryService } from '../services/inventory.service';
 import { blockchainService } from '../services/blockchain.service';
 
 const router = Router();
 const genNumber = (prefix: string) => `${prefix}-${Date.now().toString(36).toUpperCase()}`;
 
-router.get('/', authenticate, requireModuleAccess('purchase'), asyncHandler(async (_req, res) => {
+router.get('/', authenticate, asyncHandler(async (_req, res) => {
   const orders = await prisma.purchaseOrder.findMany({
     include: { vendor: true, items: { include: { product: true } } },
     orderBy: { createdAt: 'desc' },
@@ -16,7 +16,7 @@ router.get('/', authenticate, requireModuleAccess('purchase'), asyncHandler(asyn
   res.json({ success: true, data: orders });
 }));
 
-router.post('/', authenticate, requireModuleAccess('purchase', true), asyncHandler(async (req, res) => {
+router.post('/', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'PURCHASE'), asyncHandler(async (req, res) => {
   const { vendorId, items, expectedDate, notes } = req.body;
   let subtotal = 0;
   const orderItems = items.map((item: { productId: string; quantity: number; unitPrice: number }) => {
@@ -41,7 +41,7 @@ router.post('/', authenticate, requireModuleAccess('purchase', true), asyncHandl
   res.status(201).json({ success: true, data: order });
 }));
 
-router.patch('/:id/confirm', authenticate, requireModuleAccess('purchase', true), asyncHandler(async (req: AuthRequest, res) => {
+router.patch('/:id/confirm', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'PURCHASE'), asyncHandler(async (req: AuthRequest, res) => {
   const order = await prisma.purchaseOrder.update({
     where: { id: req.params.id as string },
     data: { status: 'CONFIRMED' },
@@ -53,7 +53,7 @@ router.patch('/:id/confirm', authenticate, requireModuleAccess('purchase', true)
   res.json({ success: true, data: order });
 }));
 
-router.patch('/:id/receive', authenticate, requireModuleAccess('purchase', true), asyncHandler(async (req: AuthRequest, res) => {
+router.patch('/:id/receive', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'WAREHOUSE', 'PURCHASE'), asyncHandler(async (req: AuthRequest, res) => {
   const order = await prisma.purchaseOrder.findUnique({
     where: { id: req.params.id as string },
     include: { items: true },

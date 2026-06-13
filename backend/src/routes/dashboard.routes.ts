@@ -1,8 +1,7 @@
 import { Router } from 'express';
 import prisma from '../lib/prisma';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
-import { authenticate, AuthRequest, requireModuleAccess } from '../middleware/auth';
-import { getAccessLevel } from '../lib/permissions';
+import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { inventoryService } from '../services/inventory.service';
 import { blockchainService } from '../services/blockchain.service';
 
@@ -11,11 +10,7 @@ const router = Router();
 router.get(
   '/stats',
   authenticate,
-  requireModuleAccess('dashboard'),
-  asyncHandler(async (req: AuthRequest, res) => {
-    const level = getAccessLevel(req.user!.role, 'dashboard');
-    const isLimited = level === 'limited';
-
+  asyncHandler(async (_req, res) => {
     const [
       totalProducts,
       totalCustomers,
@@ -29,7 +24,7 @@ router.get(
       prisma.product.count({ where: { isActive: true } }),
       prisma.customer.count({ where: { isActive: true } }),
       prisma.vendor.count({ where: { isActive: true } }),
-      prisma.salesOrder.findMany({ where: isLimited ? { createdById: req.user!.id } : {}, include: { items: true } }),
+      prisma.salesOrder.findMany({ include: { items: true } }),
       prisma.purchaseOrder.findMany(),
       prisma.manufacturingOrder.findMany(),
       prisma.inventory.findMany({ include: { product: true } }),
@@ -62,20 +57,6 @@ router.get(
         orders: monthOrders.length,
       };
     });
-
-    if (isLimited) {
-      return res.json({
-        success: true,
-        data: {
-          totalRevenue,
-          salesOrders: salesOrders.length,
-          pendingDeliveries,
-          delayedOrders,
-          monthlySales,
-          isLimited: true,
-        }
-      });
-    }
 
     res.json({
       success: true,

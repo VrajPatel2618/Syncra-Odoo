@@ -5,10 +5,9 @@ import { usePathname } from "next/navigation";
 import * as Icons from "lucide-react";
 import { cn } from "@/lib/utils";
 import { navigationGroups } from "@/lib/navigation";
-import { useUIStore, useAuthStore } from "@/lib/stores";
+import { useUIStore } from "@/lib/stores";
 import { useMounted } from "@/hooks/use-mounted";
 import { PanelLeftClose, PanelLeft } from "lucide-react";
-import { hasModuleAccess, ModuleType } from "@/lib/permissions";
 
 const iconMap = Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
 
@@ -16,7 +15,6 @@ export function Sidebar() {
   const pathname = usePathname();
   const persistedCollapsed = useUIStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
-  const user = useAuthStore((s) => s.user);
   const mounted = useMounted();
   const collapsed = mounted ? persistedCollapsed : false;
   const width = collapsed ? 64 : 240;
@@ -29,7 +27,7 @@ export function Sidebar() {
       <div className="px-3 py-4 border-b border-stone-700">
         <Link href="/dashboard" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-[var(--primary)] text-white text-xs font-black">
-            {user?.firstName?.[0] || "U"}{user?.lastName?.[0] || ""}
+            SE
           </div>
           {!collapsed && (
             <div className="min-w-0">
@@ -41,21 +39,15 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 overflow-y-auto scrollbar-thin py-2">
-        {navigationGroups.map((group) => {
-          const visibleItems = group.items.filter(item => 
-            !item.moduleId || hasModuleAccess(user?.role, item.moduleId as ModuleType, user?.panels)
-          );
-          if (visibleItems.length === 0) return null;
-
-          return (
-            <div key={group.label} className="mb-3">
-              {!collapsed && (
-                <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-stone-500">
-                  {group.label}
-                </p>
-              )}
-              {visibleItems.map((item) => {
-                const Icon = iconMap[item.icon] || Icons.Circle;
+        {navigationGroups.map((group) => (
+          <div key={group.label} className="mb-3">
+            {!collapsed && (
+              <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-stone-500">
+                {group.label}
+              </p>
+            )}
+            {group.items.map((item) => {
+              const Icon = iconMap[item.icon] || Icons.Circle;
               const active = pathname === item.href || pathname.startsWith(item.href + "/");
               return (
                 <Link
@@ -75,7 +67,7 @@ export function Sidebar() {
               );
             })}
           </div>
-        )})}
+        ))}
       </nav>
 
       <div className="border-t border-stone-700 p-2">
