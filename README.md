@@ -1,8 +1,8 @@
-SYNCRA ERP-Where Inventory Meets Intelligence”
+***SYNCRA ERP-Where Inventory Meets Intelligence”***
 
 The ERP must transform traditional manual business operations into a fully centralized intelligent digital ecosystem.
 
-BUSINESS PROBLEMS TO SOLVE
+**BUSINESS PROBLEMS TO SOLVE**
 
 
 The ERP should solve:
@@ -16,9 +16,9 @@ The ERP should solve:
 - manual stock calculations
 - poor vendor coordination
 - no operational analytics
-
+  
+**CORE ERP CONCEPT**
 ->The entire ERP revolves around INVENTORY MOVEMENT.
-
 Every module affects stock:
 - Sales decreases stock
 - Purchases increase stock
@@ -26,8 +26,30 @@ Every module affects stock:
 - Manufacturing produces finished goods
 - Procurement replenishes shortages
 
+  The ERP should support:
+- Product Management
+- Inventory Management
+- Sales Management
+- Purchase Management
+- Manufacturing Management
+- Bill of Materials (BoM)
+- Work Orders
+- Work Centers
+- Warehouse Management
+- Delivery Management
+- Procurement Automation
+- Blockchain Traceability
+- Audit Logs
+- AI Intelligence
+- Predictive Analytics
+- Role-Based Access Control
+- Real-Time Dashboards
+- Notifications
+- Reports
+- AI Copilot
 
-FRONTEND STACK
+
+**FRONTEND STACK**
 
 
 Use:
@@ -40,7 +62,7 @@ Use:
 - React Query
 
 
-BACKEND STACK
+***BACKEND STACK***
 
 
 Use:
@@ -57,7 +79,7 @@ Architecture:
 - centralized error handling
 
 
-DATABASE
+**DATABASE**
 
 
 Use:
@@ -65,7 +87,7 @@ Use:
 - SQLlite
 
 
-BLOCKCHAIN INTEGRATION
+**BLOCKCHAIN INTEGRATION**
 
 
 IMPORTANT:
@@ -84,7 +106,7 @@ Blockchain Stack:
 - Solidity
 - Hardhat
 
-Architecture:
+**Architecture**
 
 Frontend
 ↓
@@ -95,7 +117,7 @@ PostgreSQL
 Blockchain Audit Layer
 
 
-AI INTEGRATION
+**AI INTEGRATION**
 
 
 Use:
