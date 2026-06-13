@@ -1,0 +1,18 @@
+{
+  "name": "syncra-erp",
+  "version": "1.0.0",
+  "description": "Syncra ERP - Where Inventory Meets Intelligence",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "build": "cd frontend && npm run build && cd ../backend && npm run build",
+    "db:setup": "cd backend && npm run db:setup",
+    "blockchain:compile": "cd blockchain && npx hardhat compile",
+    "blockchain:deploy": "cd blockchain && npx hardhat run scripts/deploy.js --network hardhat"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

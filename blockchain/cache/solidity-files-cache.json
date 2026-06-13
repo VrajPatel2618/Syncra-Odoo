@@ -1,0 +1,41 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "C:\\Users\\Lenovo\\Downloads\\ERP 2\\blockchain\\contracts\\SyncraAuditTrail.sol": {
+      "lastModificationDate": 1781333001498,
+      "contentHash": "9e51bba3100934ffe9457ec72c1972e8",
+      "sourceName": "contracts/SyncraAuditTrail.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "SyncraAuditTrail"
+      ]
+    }
+  }
+}
