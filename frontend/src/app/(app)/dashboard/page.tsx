@@ -51,11 +51,13 @@ export default function DashboardPage() {
       {/* KPI row — dense, utilitarian */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         {[
-          { label: "Open Sales Orders", val: formatNumber(kpis.totalSalesOrders), note: "+3 this week" },
-          { label: "Pending Deliveries", val: formatNumber(kpis.pendingDeliveries), note: "2 due today" },
-          { label: "MOs In Progress", val: formatNumber(kpis.manufacturingOrders), note: "Paint floor busy" },
-          { label: "Low Stock Alerts", val: formatNumber(kpis.inventoryAlerts), note: "Action needed", warn: true },
-        ].map((k) => (
+          { label: "Open Sales Orders", val: formatNumber(kpis.totalSalesOrders), note: "+3 this week", show: true },
+          { label: "Pending Deliveries", val: formatNumber(kpis.pendingDeliveries), note: "2 due today", show: true },
+          { label: "MOs In Progress", val: formatNumber(kpis.manufacturingOrders), note: "Paint floor busy", show: !stats?.isLimited },
+          { label: "Low Stock Alerts", val: formatNumber(kpis.inventoryAlerts), note: "Action needed", warn: true, show: !stats?.isLimited },
+        ]
+        .filter(k => k.show)
+        .map((k) => (
           <div key={k.label} className={`stat-card ${k.warn ? "border-l-[var(--warning)]" : ""}`}>
             <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">{k.label}</p>
             <p className="text-2xl font-bold mt-1">{k.val}</p>
@@ -87,18 +89,22 @@ export default function DashboardPage() {
             <CardTitle>Quick Notes</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
+            {!stats?.isLimited && (
+              <div className="p-3 rounded border border-[var(--border)] bg-[var(--background)]">
+                <p className="font-semibold text-xs uppercase text-[var(--muted)]">AI says</p>
+                <p className="mt-1 text-[13px]">{insights?.inventoryForecast?.recommendation || "Check teak wood stock before Monday MO."}</p>
+              </div>
+            )}
             <div className="p-3 rounded border border-[var(--border)] bg-[var(--background)]">
-              <p className="font-semibold text-xs uppercase text-[var(--muted)]">AI says</p>
-              <p className="mt-1 text-[13px]">{insights?.inventoryForecast?.recommendation || "Check teak wood stock before Monday MO."}</p>
-            </div>
-            <div className="p-3 rounded border border-[var(--border)] bg-[var(--background)]">
-              <p className="font-semibold text-xs uppercase text-[var(--muted)]">Revenue YTD</p>
+              <p className="font-semibold text-xs uppercase text-[var(--muted)]">{stats?.isLimited ? "My Revenue YTD" : "Revenue YTD"}</p>
               <p className="mt-1 text-lg font-bold">{formatCurrency(kpis.totalRevenue)}</p>
             </div>
-            <div className="p-3 rounded border border-[var(--border)] bg-[var(--background)]">
-              <p className="font-semibold text-xs uppercase text-[var(--muted)]">Blockchain</p>
-              <p className="mt-1 text-[13px] text-[var(--accent)]">Audit logs syncing ✓</p>
-            </div>
+            {!stats?.isLimited && (
+              <div className="p-3 rounded border border-[var(--border)] bg-[var(--background)]">
+                <p className="font-semibold text-xs uppercase text-[var(--muted)]">Blockchain</p>
+                <p className="mt-1 text-[13px] text-[var(--accent)]">Audit logs syncing ✓</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

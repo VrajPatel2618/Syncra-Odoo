@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,8 +44,21 @@ export default function SettingsPage() {
             {activeTab === "ai" && (<><h3 className="font-semibold">AI Configuration</h3><Input placeholder="OpenAI API Key" type="password" /><Input placeholder="Gemini API Key" type="password" /><p className="text-xs text-muted">AI works in mock mode without API keys</p></>)}
             {activeTab === "blockchain" && (<><h3 className="font-semibold">Blockchain Config</h3><Input defaultValue="polygon" placeholder="Network" /><Input placeholder="Contract Address" /><p className="text-xs text-muted">Audit layer uses hash-only mode without contract</p></>)}
             {activeTab === "notifications" && (<><h3 className="font-semibold">Notification Preferences</h3>{["Low Stock Alerts", "Procurement Alerts", "AI Insights", "Delivery Updates"].map(n => (<label key={n} className="flex items-center gap-2 py-2"><input type="checkbox" defaultChecked className="rounded accent-indigo-500" />{n}</label>))}</>)}
-            {activeTab === "security" && (<><h3 className="font-semibold">Security Settings</h3><label className="flex items-center gap-2"><input type="checkbox" className="rounded accent-indigo-500" /> Enable Two-Factor Authentication</label></>)}
-            <Button variant="glow" className="mt-4">Save Changes</Button>
+            {activeTab === "security" && (<><h3 className="font-semibold">Security Settings</h3><label className="flex items-center gap-2"><input type="checkbox" className="rounded accent-[var(--primary)]" /> Enable Two-Factor Authentication</label></>)}
+            <Button 
+              variant="glow" 
+              className="mt-4" 
+              onClick={() => {
+                const btn = document.activeElement as HTMLButtonElement;
+                if (btn) btn.disabled = true;
+                setTimeout(() => {
+                  toast.success("Settings saved successfully");
+                  if (btn) btn.disabled = false;
+                }, 800);
+              }}
+            >
+              Save Changes
+            </Button>
           </CardContent>
         </Card>
       </div>

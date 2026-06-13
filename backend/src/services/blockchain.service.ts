@@ -128,9 +128,8 @@ class BlockchainService {
         network: process.env.POLYGON_RPC_URL?.includes('amoy') ? 'Polygon Amoy Testnet' : 'Polygon Mainnet',
         erpContract: ERPLedgerAddress
       };
-    } catch (error) {
-      logger.warn('Blockchain network unreachable for stats', error);
-      return { enabled: false, error: 'Blockchain node unreachable' };
+    } catch (e) {
+      return { enabled: false, error: "Node Unreachable" };
     }
   }
 }

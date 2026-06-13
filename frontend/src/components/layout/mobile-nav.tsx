@@ -4,23 +4,25 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Package, ShoppingCart, Factory, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useUIStore } from "@/lib/stores";
+import { useUIStore, useAuthStore } from "@/lib/stores";
+import { hasModuleAccess, ModuleType } from "@/lib/permissions";
 
-const items = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Home" },
-  { href: "/inventory", icon: Package, label: "Stock" },
-  { href: "/sales", icon: ShoppingCart, label: "Sales" },
-  { href: "/manufacturing", icon: Factory, label: "Mfg" },
+const items: { href: string; icon: any; label: string; module: ModuleType }[] = [
+  { href: "/dashboard", icon: LayoutDashboard, label: "Home", module: "dashboard" },
+  { href: "/inventory", icon: Package, label: "Stock", module: "inventory" },
+  { href: "/sales", icon: ShoppingCart, label: "Sales", module: "sales" },
+  { href: "/manufacturing", icon: Factory, label: "Mfg", module: "manufacturing" },
 ];
 
 export function MobileNav() {
   const pathname = usePathname();
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+  const user = useAuthStore((s) => s.user);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-[var(--border)] bg-[var(--surface)]">
       <div className="flex justify-around py-1.5">
-        {items.map((item) => {
+        {items.filter(item => hasModuleAccess(user?.role, item.module, user?.panels)).map((item) => {
           const active = pathname === item.href;
           return (
             <Link

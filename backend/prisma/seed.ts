@@ -11,26 +11,44 @@ async function main() {
 
   const admin = await prisma.user.upsert({
     where: { email: 'admin@universal.com' },
-    update: {},
-    create: {
-      email: 'admin@universal.com',
-      password,
-      firstName: 'Alice',
-      lastName: 'Smith',
-      role: 'SUPER_ADMIN',
-    },
+    update: { role: 'ADMIN', department: 'Management' },
+    create: { email: 'admin@universal.com', password, firstName: 'Alice', lastName: 'Smith', role: 'ADMIN', department: 'Management' },
   });
 
   await prisma.user.upsert({
-    where: { email: 'manager@universal.com' },
-    update: {},
-    create: {
-      email: 'manager@universal.com',
-      password,
-      firstName: 'Bob',
-      lastName: 'Jones',
-      role: 'MANAGER',
-    },
+    where: { email: 'salesmgr@universal.com' },
+    update: { role: 'SALES_MANAGER', department: 'Sales' },
+    create: { email: 'salesmgr@universal.com', password, firstName: 'Bob', lastName: 'Sales', role: 'SALES_MANAGER', department: 'Sales' },
+  });
+
+  await prisma.user.upsert({
+    where: { email: 'salesexec@universal.com' },
+    update: { role: 'SALES_EXECUTIVE', department: 'Sales' },
+    create: { email: 'salesexec@universal.com', password, firstName: 'Charlie', lastName: 'Closer', role: 'SALES_EXECUTIVE', department: 'Sales' },
+  });
+
+  await prisma.user.upsert({
+    where: { email: 'purchasemgr@universal.com' },
+    update: { role: 'PURCHASE_MANAGER', department: 'Procurement' },
+    create: { email: 'purchasemgr@universal.com', password, firstName: 'Diana', lastName: 'Buyer', role: 'PURCHASE_MANAGER', department: 'Procurement' },
+  });
+
+  await prisma.user.upsert({
+    where: { email: 'warehousemgr@universal.com' },
+    update: { role: 'WAREHOUSE_MANAGER', department: 'Logistics' },
+    create: { email: 'warehousemgr@universal.com', password, firstName: 'Eve', lastName: 'Store', role: 'WAREHOUSE_MANAGER', department: 'Logistics' },
+  });
+
+  await prisma.user.upsert({
+    where: { email: 'productionmgr@universal.com' },
+    update: { role: 'PRODUCTION_MANAGER', department: 'Manufacturing' },
+    create: { email: 'productionmgr@universal.com', password, firstName: 'Frank', lastName: 'Builder', role: 'PRODUCTION_MANAGER', department: 'Manufacturing' },
+  });
+
+  await prisma.user.upsert({
+    where: { email: 'viewer@universal.com' },
+    update: { role: 'VIEWER', department: 'Audit' },
+    create: { email: 'viewer@universal.com', password, firstName: 'Grace', lastName: 'Looker', role: 'VIEWER', department: 'Audit' },
   });
 
   const existingSettings = await prisma.companySettings.findFirst();
@@ -101,7 +119,7 @@ async function main() {
         quantity: qty,
         previousQty: 0,
         newQty: qty,
-        blockchainHash: hash,
+        blockchainTxHash: hash,
         verified: true,
         createdAt: new Date(Date.now() - Math.floor(Math.random() * 86400000))
       }

@@ -47,9 +47,11 @@ export default function InvoicesPage() {
         { key: "totalAmount", header: "Amount", render: (i: any) => formatCurrency(Number(i.totalAmount)) },
         { key: "status", header: "Status", render: (i: any) => <Badge variant={i.status === "PAID" ? "success" : "warning"}>{String(i.status)}</Badge> },
         { key: "actions", header: "Actions", render: (i: any) => (
-          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => downloadInvoice(i)}>
-            <Download className="w-3 h-3 mr-1" /> Download Bill
-          </Button>
+          i.status === "PAID" ? (
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => downloadInvoice(i)}>
+              <Download className="w-3 h-3 mr-1" /> Download Bill
+            </Button>
+          ) : <span className="text-stone-500 text-xs">—</span>
         )}
       ]} />
     </div>

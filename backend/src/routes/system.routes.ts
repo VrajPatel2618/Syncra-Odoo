@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import prisma from '../lib/prisma';
 import { asyncHandler } from '../middleware/errorHandler';
-import { authenticate } from '../middleware/auth';
+import { authenticate, requireModuleAccess } from '../middleware/auth';
 import { aiService } from '../services/ai.service';
 import { blockchainService } from '../services/blockchain.service';
 
@@ -31,7 +31,7 @@ router.get('/blockchain/logs', authenticate, asyncHandler(async (req, res) => {
   res.json({ success: true, data: logs });
 }));
 
-router.get('/audit-logs', authenticate, asyncHandler(async (req, res) => {
+router.get('/audit-logs', authenticate, requireModuleAccess('audit_log'), asyncHandler(async (req, res) => {
   const { limit = '50', entityType } = req.query;
   const logs = await prisma.auditLog.findMany({
     where: entityType ? { entityType: entityType as string } : undefined,
@@ -42,15 +42,14 @@ router.get('/audit-logs', authenticate, asyncHandler(async (req, res) => {
 
   const enrichedLogs = await Promise.all(logs.map(async (log) => {
     let referenceNumber = log.entityId;
-    if (!log.entityId) return log;
     try {
-      if (log.entityType === 'SalesOrder') {
+      if (log.entityId && log.entityType === 'SalesOrder') {
         const entity = await prisma.salesOrder.findUnique({ where: { id: log.entityId } });
         if (entity) referenceNumber = entity.orderNumber;
-      } else if (log.entityType === 'PurchaseOrder') {
+      } else if (log.entityId && log.entityType === 'PurchaseOrder') {
         const entity = await prisma.purchaseOrder.findUnique({ where: { id: log.entityId } });
         if (entity) referenceNumber = entity.orderNumber;
-      } else if (log.entityType === 'StockMovement') {
+      } else if (log.entityId && log.entityType === 'StockMovement') {
         referenceNumber = log.entityId.substring(0, 8); // Because we used substring(0,8) for stock movements on chain
       }
     } catch(e) {}

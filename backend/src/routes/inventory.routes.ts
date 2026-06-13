@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import prisma from '../lib/prisma';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
-import { authenticate, authorize, AuthRequest } from '../middleware/auth';
+import { authenticate, authorize, AuthRequest, requireModuleAccess } from '../middleware/auth';
 import { inventoryService } from '../services/inventory.service';
 
 const router = Router();
@@ -9,6 +9,7 @@ const router = Router();
 router.get(
   '/',
   authenticate,
+  requireModuleAccess('inventory'),
   asyncHandler(async (_req, res) => {
     const inventory = await prisma.inventory.findMany({
       include: { product: { include: { category: true } }, warehouse: true },
@@ -28,6 +29,7 @@ router.get(
 router.get(
   '/movements',
   authenticate,
+  requireModuleAccess('inventory'),
   asyncHandler(async (req, res) => {
     const { productId, limit = '50' } = req.query;
     const movements = await prisma.stockMovement.findMany({
@@ -43,6 +45,7 @@ router.get(
 router.get(
   '/alerts',
   authenticate,
+  requireModuleAccess('inventory'),
   asyncHandler(async (_req, res) => {
     const inventory = await prisma.inventory.findMany({
       include: { product: true, warehouse: true },
@@ -67,7 +70,7 @@ router.get(
 router.post(
   '/adjust',
   authenticate,
-  authorize('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'WAREHOUSE'),
+  requireModuleAccess('inventory', true),
   asyncHandler(async (req: AuthRequest, res) => {
     const { productId, warehouseId, quantity, movementType, notes } = req.body;
     const movement = await inventoryService.adjustStock({
@@ -85,7 +88,7 @@ router.post(
 router.post(
   '/transfer',
   authenticate,
-  authorize('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'WAREHOUSE'),
+  requireModuleAccess('inventory', true),
   asyncHandler(async (req: AuthRequest, res) => {
     const { productId, fromWarehouseId, toWarehouseId, quantity } = req.body;
 
