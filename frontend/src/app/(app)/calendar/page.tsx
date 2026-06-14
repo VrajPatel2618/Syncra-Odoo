@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -66,7 +66,7 @@ export default function CalendarPage() {
             </div>
             <div className="grid grid-cols-7 gap-2">
               {Array.from({length: startDayOfWeek}).map((_, i) => (
-                <div key={empty-} className="aspect-square" />
+                <div key={`empty-${i}`} className="aspect-square" />
               ))}
               {days.map((day, i) => {
                 const dayEvents = mappedEvents.filter(e => isSameDay(e.date, day));
