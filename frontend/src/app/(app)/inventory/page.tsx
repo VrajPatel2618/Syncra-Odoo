@@ -17,14 +17,14 @@ const mockInventory = [
 export default function InventoryPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["inventory"],
-    queryFn: () => inventoryApi.list().then((r) => r.data.data).catch(() => mockInventory),
+    queryFn: () => inventoryApi.list().then((r) => r.data.data),
   });
   const { data: alerts } = useQuery({
     queryKey: ["inventory-alerts"],
     queryFn: () => inventoryApi.alerts().then((r) => r.data.data).catch(() => []),
   });
 
-  const inventory = (data || mockInventory).map((i: Record<string, unknown>) => ({
+  const inventory = (data || []).map((i: Record<string, unknown>) => ({
     ...i,
     freeQty: (i.onHandQty as number) - (i.reservedQty as number),
   }));

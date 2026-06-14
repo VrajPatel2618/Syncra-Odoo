@@ -100,7 +100,7 @@ router.patch('/:id/confirm', authenticate, requireModuleAccess('sales', true), a
 
   const updated = await prisma.salesOrder.update({
     where: { id: order.id },
-    data: { status: 'CONFIRMED' },
+    data: { status: 'IN_PROGRESS' },
     include: { customer: true, items: { include: { product: true } } },
   });
 
@@ -213,6 +213,12 @@ router.post('/:id/pay', authenticate, requireModuleAccess('sales', true), asyncH
   await prisma.invoice.updateMany({
     where: { salesOrderId: order.id },
     data: { status: 'PAID', paidDate: new Date() }
+  });
+
+  // Update SalesOrder status to PAID
+  await prisma.salesOrder.update({
+    where: { id: order.id },
+    data: { status: 'PAID' }
   });
   
   res.json({ success: true, data: payment });

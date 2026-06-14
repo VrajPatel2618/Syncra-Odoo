@@ -57,6 +57,7 @@ router.post(
           lastName: user.lastName,
           role: user.role,
           avatar: user.avatar,
+          panels: user.panels,
         },
         token,
       },

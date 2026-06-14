@@ -9,7 +9,6 @@ import { Navbar } from "./navbar";
 import { MobileNav } from "./mobile-nav";
 import { NotificationPanel } from "./notification-panel";
 import { CommandPalette } from "../command-palette";
-import { AICopilot } from "../ai/copilot";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -40,7 +39,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
       <MobileNav />
       <CommandPalette />
-      <AICopilot />
       <NotificationPanel />
     </div>
   );

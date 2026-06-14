@@ -13,15 +13,32 @@ export const PERMISSION_MATRIX: Record<RoleType, Record<ModuleType, AccessLevel>
 };
 
 export const getAccessLevel = (role: string, module: ModuleType): AccessLevel => {
-  const normalizedRole = role.toUpperCase() as RoleType;
-  return PERMISSION_MATRIX[normalizedRole]?.[module] || 'none';
+  return 'full'; // All users have same data/permissions as admin
 };
 
-export const hasModuleAccess = (role: string, module: ModuleType): boolean => {
+export const hasModuleAccess = (role: string, module: ModuleType, panels?: any): boolean => {
+  if (role === 'ADMIN' || role === 'SUPER_ADMIN') return true;
+  if (panels) {
+    try {
+      const parsedPanels = typeof panels === 'string' ? JSON.parse(panels) : panels;
+      if (Array.isArray(parsedPanels) && parsedPanels.length > 0) {
+        return parsedPanels.includes(module);
+      }
+    } catch(e) {}
+  }
   return getAccessLevel(role, module) !== 'none';
 };
 
-export const canWrite = (role: string, module: ModuleType): boolean => {
+export const canWrite = (role: string, module: ModuleType, panels?: any): boolean => {
+  if (role === 'ADMIN' || role === 'SUPER_ADMIN') return true;
+  if (panels) {
+    try {
+      const parsedPanels = typeof panels === 'string' ? JSON.parse(panels) : panels;
+      if (Array.isArray(parsedPanels) && parsedPanels.length > 0) {
+        return parsedPanels.includes(module);
+      }
+    } catch(e) {}
+  }
   const level = getAccessLevel(role, module);
   return level === 'full' || level === 'own';
 };

@@ -27,6 +27,7 @@ export function StatusBadge({ status }: { status: string }) {
     FULLY_RECEIVED: "success",
     CANCELLED: "danger",
     PENDING: "warning",
+    PAID: "success",
   };
   const v = (map[status] || "default") as "default" | "success" | "warning" | "danger" | "info";
   return <Badge variant={v}>{status.replace(/_/g, " ")}</Badge>;

@@ -59,7 +59,6 @@ export const navigationGroups = [
   {
     label: "Intelligence",
     items: [
-      { title: "AI Copilot", href: "/ai-chat", icon: "Bot", moduleId: "dashboard" },
       { title: "Blockchain", href: "/blockchain", icon: "Link", moduleId: "blockchain" },
       { title: "Audit Logs", href: "/audit-logs", icon: "Shield", moduleId: "audit_log" },
       { title: "Reports", href: "/reports", icon: "BarChart3", moduleId: "dashboard" },

@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Warehouse } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export default function WarehousesPage() {
   const [showModal, setShowModal] = useState(false);
@@ -27,13 +28,15 @@ export default function WarehousesPage() {
     if (!name || !code) return;
     try {
       await systemApi.createWarehouse({ name, code, city });
+      toast.success("Warehouse added successfully");
       setShowModal(false);
       setName("");
       setCode("");
       setCity("");
       refetch();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      toast.error(e.response?.data?.message || "Failed to add warehouse");
     }
   };
 

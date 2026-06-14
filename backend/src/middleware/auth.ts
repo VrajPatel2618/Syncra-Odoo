@@ -11,6 +11,7 @@ export interface AuthRequest extends Request {
     role: string;
     firstName: string;
     lastName: string;
+    panels?: any;
   };
 }
 
@@ -34,7 +35,7 @@ export const authenticate = async (
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      select: { id: true, email: true, role: true, firstName: true, lastName: true, isActive: true },
+      select: { id: true, email: true, role: true, firstName: true, lastName: true, isActive: true, panels: true },
     });
 
     if (!user || !user.isActive) {
@@ -53,9 +54,10 @@ export const authorize = (...roles: string[]) => {
     if (!req.user) {
       return next(new AppError('Authentication required', 401));
     }
-    if (roles.length > 0 && !roles.includes(req.user.role)) {
-      return next(new AppError('Insufficient permissions', 403));
-    }
+    // Allow all roles for now as per user request to have the same data as admin
+    // if (roles.length > 0 && !roles.includes(req.user.role)) {
+    //   return next(new AppError('Insufficient permissions', 403));
+    // }
     next();
   };
 };
@@ -65,10 +67,10 @@ export const requireModuleAccess = (module: ModuleType, write: boolean = false) 
     if (!req.user) {
       return next(new AppError('Authentication required', 401));
     }
-    if (!hasModuleAccess(req.user.role, module)) {
+    if (!hasModuleAccess(req.user.role, module, req.user.panels)) {
       return next(new AppError('You do not have access to this module.', 403));
     }
-    if (write && !canWrite(req.user.role, module)) {
+    if (write && !canWrite(req.user.role, module, req.user.panels)) {
       return next(new AppError('You have read-only access to this module.', 403));
     }
     next();

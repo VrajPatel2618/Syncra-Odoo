@@ -20,9 +20,9 @@ const mockSales = [
 
 const columns = [
   { status: "DRAFT", label: "Draft", color: "border-slate-500/30" },
-  { status: "CONFIRMED", label: "Confirmed", color: "border-blue-500/30" },
-  { status: "PARTIALLY_DELIVERED", label: "Partial", color: "border-amber-500/30" },
-  { status: "FULLY_DELIVERED", label: "Delivered", color: "border-emerald-500/30" },
+  { status: "IN_PROGRESS", label: "In Progress", color: "border-blue-500/30" },
+  { status: "FULLY_DELIVERED", label: "Delivery", color: "border-amber-500/30" },
+  { status: "PAID", label: "Paid Status", color: "border-emerald-500/30" },
 ];
 
 export default function SalesPage() {
@@ -30,13 +30,15 @@ export default function SalesPage() {
   const user = useAuthStore((s) => s.user);
   const hasWriteAccess = canWrite(user?.role, "sales");
   const [showModal, setShowModal] = useState(false);
+  const [showAllCards, setShowAllCards] = useState(false);
+  const [showAllTable, setShowAllTable] = useState(false);
   const [customerId, setCustomerId] = useState("");
   const [productId, setProductId] = useState("");
   const [quantity, setQuantity] = useState(1);
 
   const { data, isLoading } = useQuery({
     queryKey: ["sales"],
-    queryFn: () => salesApi.list().then((r) => r.data.data).catch(() => mockSales),
+    queryFn: () => salesApi.list().then((r) => r.data.data),
   });
 
   const { data: customers } = useQuery({
@@ -69,13 +71,19 @@ export default function SalesPage() {
     onError: (e: any) => toast.error(e.message || "Failed to create order"),
   });
 
-  const orders = data || mockSales;
+  const orders = (data || []).sort((a: any, b: any) => {
+    // Paid items at the bottom
+    if (a.status === "PAID" && b.status !== "PAID") return 1;
+    if (a.status !== "PAID" && b.status === "PAID") return -1;
+    // Sequence by date (descending)
+    return new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime();
+  });
 
   return (
     <div>
       <PageHeader 
         title="Sales Management" 
-        description="Order lifecycle: Draft → Confirmed → Delivered" 
+        description="Order lifecycle: Draft → In Progress → Delivery → Paid" 
         icon={ShoppingCart} 
         action={hasWriteAccess ? { label: "New Sale", onClick: () => setShowModal(true) } : undefined}
       />
@@ -130,7 +138,10 @@ export default function SalesPage() {
             <CardContent className="p-0">
               <p className="text-xs text-muted mb-2">{col.label}</p>
               <div className="space-y-2">
-                {orders.filter((o: {status:string}) => o.status === col.status).map((o: typeof mockSales[0]) => (
+                {orders
+                  .filter((o: {status:string}) => o.status === col.status)
+                  .slice(0, showAllCards ? undefined : 3)
+                  .map((o: typeof mockSales[0]) => (
                   <div key={o.id} className="rounded-lg glass p-3 text-sm">
                     <p className="font-medium">{o.orderNumber}</p>
                     <p className="text-xs text-muted">{o.customer?.name}</p>
@@ -142,7 +153,12 @@ export default function SalesPage() {
           </Card>
         ))}
       </div>
-      <DataTable loading={isLoading} data={orders} columns={[
+      <div className="flex justify-center mb-6">
+        <Button variant="outline" size="sm" onClick={() => setShowAllCards(!showAllCards)}>
+          {showAllCards ? "Show Less in Overview" : "Show All in Overview"}
+        </Button>
+      </div>
+      <DataTable loading={isLoading} data={showAllTable ? orders : orders.slice(0, 3)} columns={[
         { key: "orderNumber", header: "Order #" },
         { key: "customer", header: "Customer", render: (o: any) => o.customer?.name },
         { key: "status", header: "Status", render: (o: any) => <StatusBadge status={o.status as string} /> },
@@ -164,19 +180,26 @@ export default function SalesPage() {
               {o.status === "DRAFT" && (
                 <button className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onClick={() => handleAction(salesApi.confirm(o.id as string), "Order confirmed")}>Confirm</button>
               )}
-              {(o.status === "CONFIRMED" || o.status === "PARTIALLY_DELIVERED") && (
-                <button className="text-xs bg-indigo-500 hover:bg-indigo-600 text-white px-2 py-1 rounded" onClick={() => handleAction(salesApi.deliver(o.id as string), "Order delivered")}>Deliver</button>
+              {o.status === "IN_PROGRESS" && (
+                <button className="text-xs bg-indigo-500 hover:bg-indigo-600 text-white px-2 py-1 rounded" onClick={() => handleAction(salesApi.deliver(o.id as string), "Order delivered")}>Delivery</button>
               )}
-              {o.status !== "DRAFT" && (
-                <>
-                  <button className="text-xs bg-cyan-500 hover:bg-cyan-600 text-white px-2 py-1 rounded" onClick={() => handleAction(salesApi.invoice(o.id as string), "Invoice generated")}>Invoice</button>
-                  <button className="text-xs bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded" onClick={() => handleAction(salesApi.pay(o.id as string), "Payment recorded")}>Pay</button>
-                </>
+              {o.status === "FULLY_DELIVERED" && (
+                <button className="text-xs bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded" onClick={() => handleAction(salesApi.pay(o.id as string), "Payment recorded")}>Pay</button>
+              )}
+              {o.status === "PAID" && (
+                <span className="text-xs font-bold text-[var(--foreground)] px-2 py-1">Paid</span>
               )}
             </div>
           );
         }}] : []),
       ]} />
+      {orders.length > 3 && (
+        <div className="flex justify-center mt-4">
+          <Button variant="outline" size="sm" onClick={() => setShowAllTable(!showAllTable)}>
+            {showAllTable ? "Show Less in Table" : "Show All in Table"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

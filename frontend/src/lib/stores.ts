@@ -43,12 +43,10 @@ export const useAuthStore = create<AuthState>()(
 interface UIState {
   sidebarCollapsed: boolean;
   theme: "light" | "dark";
-  aiCopilotOpen: boolean;
   commandPaletteOpen: boolean;
   notificationPanelOpen: boolean;
   toggleSidebar: () => void;
   setTheme: (theme: "light" | "dark") => void;
-  toggleAiCopilot: () => void;
   setCommandPaletteOpen: (open: boolean) => void;
   setNotificationPanelOpen: (open: boolean) => void;
 }
@@ -58,7 +56,6 @@ export const useUIStore = create<UIState>()(
     (set) => ({
       sidebarCollapsed: false,
       theme: "light",
-      aiCopilotOpen: false,
       commandPaletteOpen: false,
       notificationPanelOpen: false,
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
@@ -68,7 +65,6 @@ export const useUIStore = create<UIState>()(
         }
         set({ theme });
       },
-      toggleAiCopilot: () => set((s) => ({ aiCopilotOpen: !s.aiCopilotOpen })),
       setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
       setNotificationPanelOpen: (open) => set({ notificationPanelOpen: open }),
     }),

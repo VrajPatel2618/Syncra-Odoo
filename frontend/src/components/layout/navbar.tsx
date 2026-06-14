@@ -11,7 +11,7 @@ import { systemApi } from "@/lib/api";
 export function Navbar() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
-  const { theme, setTheme, toggleAiCopilot, setCommandPaletteOpen, setNotificationPanelOpen } = useUIStore();
+  const { theme, setTheme, setCommandPaletteOpen, setNotificationPanelOpen } = useUIStore();
   const [profileOpen, setProfileOpen] = useState(false);
 
   const { data: notifications } = useQuery({
@@ -38,9 +38,6 @@ export function Navbar() {
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
 
-        <Button variant="ghost" size="icon" onClick={toggleAiCopilot} title="Ask AI">
-          <MessageSquare className="h-4 w-4" />
-        </Button>
 
         <Button variant="ghost" size="icon" onClick={() => setNotificationPanelOpen(true)} className="relative" title="Alerts">
           <Bell className="h-4 w-4" />

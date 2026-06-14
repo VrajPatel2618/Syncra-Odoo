@@ -20,10 +20,10 @@ export default function ProductsPage() {
   const [view, setView] = useState<"grid" | "table">("table");
   const { data, isLoading } = useQuery({
     queryKey: ["products"],
-    queryFn: () => productsApi.list().then((r) => r.data.data).catch(() => mockProducts),
+    queryFn: () => productsApi.list().then((r) => r.data.data),
   });
 
-  const products = data || mockProducts;
+  const products = data || [];
 
   return (
     <div>
