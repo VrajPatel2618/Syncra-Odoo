@@ -19,10 +19,11 @@ async function main() {
   const stockVerifierAddress = await stockVerifier.getAddress();
   console.log(`StockVerifier deployed to: ${stockVerifierAddress}`);
 
-  // 3. Authorize StockVerifier to write to ERPLedger if needed (Optional depending on exact architecture, usually they are separate)
-  // But let's authorize the deployer as a writer explicitly just in case
-  const [deployer] = await hre.ethers.getSigners();
-  console.log(`Deployer ${deployer.address} is automatically authorized as owner/writer.`);
+  // 3. Authorize StockVerifier to write to ERPLedger
+  console.log("Authorizing StockVerifier as a writer in ERPLedger...");
+  const tx = await erpLedger.authorizeWriter(stockVerifierAddress, true);
+  await tx.wait();
+  console.log("StockVerifier authorized successfully.");
 
   // Save addresses to file
   const deployedAddresses = {
