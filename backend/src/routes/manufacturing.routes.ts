@@ -155,4 +155,188 @@ router.patch('/orders/:id/complete', authenticate, requireModuleAccess('manufact
   res.json({ success: true, data: updated });
 }));
 
+router.post('/boms', authenticate, requireModuleAccess('manufacturing', true), asyncHandler(async (req, res) => {
+  const { name, finishedProductId, productionDuration, totalCost, qualityStandard, components, operations } = req.body;
+  if (!components || components.length === 0) throw new AppError('BoM must have at least 1 component', 400);
+  if (!operations || operations.length === 0) throw new AppError('BoM must have at least 1 operation', 400);
+
+  const bom = await prisma.billOfMaterial.create({
+    data: {
+      name,
+      finishedProductId,
+      productionDuration,
+      totalCost,
+      qualityStandard,
+      version: "1.0",
+      components: {
+        create: components.map((c: any) => ({
+          productId: c.productId,
+          quantity: c.quantity,
+          unit: c.unit || "pcs",
+        }))
+      },
+      operations: {
+        create: operations.map((o: any, idx: number) => ({
+          workCenterId: o.workCenterId,
+          sequence: o.sequence || idx + 1,
+          name: o.name,
+          duration: o.duration,
+        }))
+      }
+    },
+    include: { components: true, operations: true }
+  });
+  res.status(201).json({ success: true, data: bom });
+}));
+
+router.put('/boms/:id', authenticate, requireModuleAccess('manufacturing', true), asyncHandler(async (req, res) => {
+  const id = req.params.id as string;
+  const { name, finishedProductId, productionDuration, totalCost, qualityStandard, components, operations } = req.body;
+  
+  if (!components || components.length === 0) throw new AppError('BoM must have at least 1 component', 400);
+  if (!operations || operations.length === 0) throw new AppError('BoM must have at least 1 operation', 400);
+
+  const oldBom = await prisma.billOfMaterial.findUnique({ where: { id } });
+  if (!oldBom) throw new AppError('BoM not found', 404);
+
+  // Deactivate old version
+  await prisma.billOfMaterial.update({
+    where: { id },
+    data: { isActive: false }
+  });
+
+  // Calculate new version number
+  const versionParts = oldBom.version.split('.');
+  const newVersion = versionParts.length === 2 
+    ? `${versionParts[0]}.${parseInt(versionParts[1]) + 1}` 
+    : `${oldBom.version}.1`;
+
+  const newBom = await prisma.billOfMaterial.create({
+    data: {
+      name,
+      finishedProductId,
+      productionDuration,
+      totalCost,
+      qualityStandard,
+      version: newVersion,
+      isActive: true,
+      components: {
+        create: components.map((c: any) => ({
+          productId: c.productId,
+          quantity: c.quantity,
+          unit: c.unit || "pcs",
+        }))
+      },
+      operations: {
+        create: operations.map((o: any, idx: number) => ({
+          workCenterId: o.workCenterId,
+          sequence: o.sequence || idx + 1,
+          name: o.name,
+          duration: o.duration,
+        }))
+      }
+    },
+    include: { components: true, operations: true }
+  });
+
+  res.json({ success: true, data: newBom });
+}));
+
+router.delete('/boms/:id', authenticate, requireModuleAccess('manufacturing', true), asyncHandler(async (req, res) => {
+  await prisma.billOfMaterial.delete({ where: { id: req.params.id as string } });
+  res.json({ success: true });
+}));
+
+router.patch('/boms/:id/status', authenticate, requireModuleAccess('manufacturing', true), asyncHandler(async (req, res) => {
+  const { isActive } = req.body;
+  const bom = await prisma.billOfMaterial.update({
+    where: { id: req.params.id as string },
+    data: { isActive }
+  });
+  res.json({ success: true, data: bom });
+}));
+
+router.post('/boms/:id/clone', authenticate, requireModuleAccess('manufacturing', true), asyncHandler(async (req, res) => {
+  const id = req.params.id as string;
+  const oldBom = await prisma.billOfMaterial.findUnique({ 
+    where: { id },
+    include: { components: true, operations: true }
+  });
+  if (!oldBom) throw new AppError('BoM not found', 404);
+
+  const cloned = await prisma.billOfMaterial.create({
+    data: {
+      name: `${oldBom.name} (Clone)`,
+      finishedProductId: oldBom.finishedProductId,
+      productionDuration: oldBom.productionDuration,
+      totalCost: oldBom.totalCost,
+      qualityStandard: oldBom.qualityStandard,
+      version: "1.0",
+      isActive: false,
+      components: {
+        create: oldBom.components.map((c: any) => ({
+          productId: c.productId,
+          quantity: c.quantity,
+          unit: c.unit,
+        }))
+      },
+      operations: {
+        create: oldBom.operations.map((o: any) => ({
+          workCenterId: o.workCenterId,
+          sequence: o.sequence,
+          name: o.name,
+          duration: o.duration,
+        }))
+      }
+    },
+    include: { components: true, operations: true }
+  });
+
+  res.status(201).json({ success: true, data: cloned });
+}));
+
+router.get('/boms/:id/impact', authenticate, requireModuleAccess('manufacturing'), asyncHandler(async (req, res) => {
+  const id = req.params.id as string;
+  const qty = parseInt(req.query.qty as string) || 1;
+  
+  const bom = await prisma.billOfMaterial.findUnique({
+    where: { id },
+    include: { 
+      components: { include: { product: true } }, 
+      operations: { include: { workCenter: true } }
+    }
+  });
+  if (!bom) throw new AppError('BoM not found', 404);
+
+  const impact = {
+    quantityToProduce: qty,
+    components: [] as any[],
+    totalDuration: 0,
+    operations: [] as any[]
+  };
+
+  for (const comp of bom.components) {
+    const required = comp.quantity * qty;
+    const freeQty = await inventoryService.getFreeQty(comp.productId);
+    impact.components.push({
+      product: (comp as any).product,
+      required,
+      available: freeQty,
+      shortage: Math.max(0, required - freeQty)
+    });
+  }
+
+  for (const op of bom.operations) {
+    const duration = op.duration * qty;
+    impact.totalDuration += duration;
+    impact.operations.push({
+      workCenter: (op as any).workCenter,
+      name: op.name,
+      duration
+    });
+  }
+
+  res.json({ success: true, data: impact });
+}));
+
 export default router;

@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "lucide-react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, parseISO, addMonths, subMonths } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, isSameMonth, parseISO, addMonths, subMonths } from "date-fns";
 import { manufacturingApi, purchaseApi, salesApi } from "@/lib/api";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -72,8 +72,8 @@ export default function CalendarPage() {
                 const dayEvents = mappedEvents.filter(e => isSameDay(e.date, day));
                 const isToday = isSameDay(day, new Date());
                 return (
-                  <div key={i} className={spect-square rounded-lg flex flex-col p-1.5 border }>
-                    <span className={	ext-xs }>{format(day, "d")}</span>
+                  <div key={i} className={`aspect-square rounded-lg flex flex-col p-1.5 border ${!isSameMonth(day, currentDate) ? "bg-stone-50 text-stone-400" : isToday ? "bg-indigo-50 border-indigo-200" : "bg-white"}`}>
+                    <span className={`text-xs ${isToday ? "font-bold text-indigo-700 bg-indigo-100 w-6 h-6 rounded-full flex items-center justify-center" : "font-medium"}`}>{format(day, "d")}</span>
                     <div className="mt-1 space-y-1 overflow-y-auto scrollbar-none">
                       {dayEvents.slice(0, 3).map((e, j) => (
                         <div key={j} className="text-[9px] truncate px-1 py-0.5 rounded bg-stone-800 text-stone-300 border border-stone-700" title={e.title}>

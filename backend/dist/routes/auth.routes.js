@@ -41,6 +41,7 @@ router.post('/login', (0, errorHandler_1.asyncHandler)(async (req, res) => {
                 lastName: user.lastName,
                 role: user.role,
                 avatar: user.avatar,
+                panels: user.panels,
             },
             token,
         },

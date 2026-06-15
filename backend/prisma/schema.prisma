@@ -242,6 +242,7 @@ model BillOfMaterial {
   version           String         @default("1.0")
   productionDuration Int           @default(60)
   totalCost         Decimal        @default(0) 
+  qualityStandard   String?        @default("Standard")
   isActive          Boolean        @default(true)
   components        BomComponent[]
   operations        BomOperation[]

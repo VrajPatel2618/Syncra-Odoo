@@ -11,15 +11,36 @@ exports.PERMISSION_MATRIX = {
     'VIEWER': { 'dashboard': 'read', 'inventory': 'read', 'sales': 'read', 'purchase': 'read', 'manufacturing': 'read', 'audit_log': 'none', 'user_management': 'none', 'blockchain': 'read' },
 };
 const getAccessLevel = (role, module) => {
-    const normalizedRole = role.toUpperCase();
-    return exports.PERMISSION_MATRIX[normalizedRole]?.[module] || 'none';
+    return 'full'; // All users have same data/permissions as admin
 };
 exports.getAccessLevel = getAccessLevel;
-const hasModuleAccess = (role, module) => {
+const hasModuleAccess = (role, module, panels) => {
+    if (role === 'ADMIN' || role === 'SUPER_ADMIN')
+        return true;
+    if (panels) {
+        try {
+            const parsedPanels = typeof panels === 'string' ? JSON.parse(panels) : panels;
+            if (Array.isArray(parsedPanels) && parsedPanels.length > 0) {
+                return parsedPanels.includes(module);
+            }
+        }
+        catch (e) { }
+    }
     return (0, exports.getAccessLevel)(role, module) !== 'none';
 };
 exports.hasModuleAccess = hasModuleAccess;
-const canWrite = (role, module) => {
+const canWrite = (role, module, panels) => {
+    if (role === 'ADMIN' || role === 'SUPER_ADMIN')
+        return true;
+    if (panels) {
+        try {
+            const parsedPanels = typeof panels === 'string' ? JSON.parse(panels) : panels;
+            if (Array.isArray(parsedPanels) && parsedPanels.length > 0) {
+                return parsedPanels.includes(module);
+            }
+        }
+        catch (e) { }
+    }
     const level = (0, exports.getAccessLevel)(role, module);
     return level === 'full' || level === 'own';
 };

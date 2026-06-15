@@ -99,7 +99,7 @@ router.patch('/:id/confirm', auth_1.authenticate, (0, auth_1.requireModuleAccess
     }
     const updated = await prisma_1.default.salesOrder.update({
         where: { id: order.id },
-        data: { status: 'CONFIRMED' },
+        data: { status: 'IN_PROGRESS' },
         include: { customer: true, items: { include: { product: true } } },
     });
     await prisma_1.default.auditLog.create({
@@ -201,6 +201,11 @@ router.post('/:id/pay', auth_1.authenticate, (0, auth_1.requireModuleAccess)('sa
     await prisma_1.default.invoice.updateMany({
         where: { salesOrderId: order.id },
         data: { status: 'PAID', paidDate: new Date() }
+    });
+    // Update SalesOrder status to PAID
+    await prisma_1.default.salesOrder.update({
+        where: { id: order.id },
+        data: { status: 'PAID' }
     });
     res.json({ success: true, data: payment });
 }));
